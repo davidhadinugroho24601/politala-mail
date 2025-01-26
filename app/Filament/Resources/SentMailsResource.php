@@ -25,40 +25,17 @@ use Filament\Notifications\Notification;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Carbon;
+use Filament\Tables\Columns\ViewColumn;
+use App\Models\ApprovalChain;
 
 class SentMailsResource extends Resource
 {
     protected static ?string $model = Mail::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    function getChildGroupIds($groupId) {
-        $childIds = [];
-
-        // Get direct child groups
-        $children = Group::where('parent_id', $groupId)->get();
-
-        foreach ($children as $child) {
-            $childIds[] = $child->id;
-
-            // Recursively get children of the current child
-            $childIds = array_merge($childIds, $this->getChildGroupIds($child->id));
-        }
-
-        return $childIds;
-    }
-
-    function getParentGroupIds($groupId) {
-        $parentIds = [];
     
-        $group = Group::find($groupId);
-    
-        while ($group && $group->parent_id) {
-            $parentIds[] = $group->parent_id;
-            $group = Group::find($group->parent_id);
-        }
-    
-        return $parentIds;
-    }
+
+
     public static function form(Form $form): Form
     {
 
@@ -142,8 +119,27 @@ public static function table(Table $table): Table
                         ->translatedFormat('d F Y, H:i') . ' WITA'
                     : '-'; // Show a dash if no timestamps are available
             }),
-            
+         
+            // ViewColumn::make('timeline')
+            // ->label('Timeline')
+            // ->view('filament.tables.columns.timeline-widget', [
+            //     'approvals' =>  fn ($record) => ApprovalChain::where('mail_id', $record->id)->orderBy('id')
+            //         ->get()
+            //         ->map(function ($approval) {
+            //             // Dynamically add a color based on the status
+            //             $approval->color = match ($approval->status) {
+            //                 'waiting' => '#f39c12', // Yellow for waiting
+            //                 'approved' => '#2ecc71', // Green for approved
+            //                 'finished' => '#2ecc71', // Green for finished
+            //                 'denied' => '#e74c3c', // Red for denied
+            //                 default => '#bdc3c7', // Grey for any other status
+            //             };
+            //             return $approval;
+            //         }),
+            // ])
+            // ->extraAttributes(['class' => 'max-w-xs overflow-hidden truncate', 'style' => 'text-align: left;'])
         
+
 
         ])
         
