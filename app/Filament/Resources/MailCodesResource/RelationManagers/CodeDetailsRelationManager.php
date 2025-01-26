@@ -20,10 +20,6 @@ class CodeDetailsRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                TextInput::make('text')
-                    ->required()
-                    ->maxLength(255),
-                
                 Select::make('type')
                 ->options([
                     'text' => 'Text',
@@ -31,7 +27,29 @@ class CodeDetailsRelationManager extends RelationManager
                     'date' => 'Tanggal',
                     'month' => 'Bulan',
                     'year' => 'Tahun',
-                ])->selectablePlaceholder(false),
+                ])
+                ->reactive() // Make the select field reactive
+                ->required(),
+    
+            TextInput::make('text')
+                ->required()
+                ->maxLength(255)
+                ->visible(fn ($get) => $get('type') === 'text') // Show only when 'text' is selected
+                ->placeholder('Enter text here'),
+    
+            TextInput::make('increment_start')
+                ->label('Increment Start')
+                ->required()
+                ->visible(fn ($get) => $get('type') === 'increment') // Show only when 'increment' is selected
+                ->numeric(),
+
+            TextInput::make('increment_limit')
+                ->label('Increment Start')
+                ->required()
+                ->visible(fn ($get) => $get('type') === 'increment') // Show only when 'increment' is selected
+                ->numeric(),
+    
+
                 
             ]);
     }
@@ -41,7 +59,8 @@ class CodeDetailsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('text')
             ->columns([
-                Tables\Columns\TextColumn::make('text'),
+                Tables\Columns\TextColumn::make('text')->placeholder('Data belum tersedia'),
+                Tables\Columns\TextColumn::make('type'),
             ])
             ->filters([
                 //

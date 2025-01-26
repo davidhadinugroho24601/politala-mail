@@ -86,4 +86,14 @@ return [
 
     'livewire_loading_delay' => 'default',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Path
+    |--------------------------------------------------------------------------
+    |
+    | This defines the login path for Filament. Update it to customize where
+    | the Filament login page is accessible from.
+    |
+    */
+
 ];

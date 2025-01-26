@@ -13,5 +13,14 @@ class CreateMailCodes extends CreateRecord
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
     {
 
+        $record = $this->getModel()::create($data);
+        $value = [
+            'code_id' => $record->id
+        ];
+        for ($i=0; $i < $record->section_qty; $i++) { 
+            MailCodeDetail::insert($value);
+        }
+
+        return $record;
     }
 }
