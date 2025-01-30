@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->timestamps();
+        Schema::table('groups', function (Blueprint $table) {
+            
+            $table->dropForeign('groups_manager_id_foreign'); // If you know the exact constraint name
+
 
 
         });
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_categories');
+        //
     }
 };

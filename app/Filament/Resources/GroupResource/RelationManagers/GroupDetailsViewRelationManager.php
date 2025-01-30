@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\SelectColumn;
 use App\Models\User;
 use App\Models\Group;
+use Filament\Forms\Components\Select;
 
 class GroupDetailsViewRelationManager extends RelationManager
 {
@@ -44,10 +45,7 @@ class GroupDetailsViewRelationManager extends RelationManager
                     ->label('User')
                     ->relationship('users', 'name') 
                     ->searchable(), 
-                Select::make('group_id')
-                    ->label('Group')
-                    ->relationship('groups', 'name') 
-                    ->searchable(), 
+           
             ]);
     }
 
@@ -64,15 +62,7 @@ class GroupDetailsViewRelationManager extends RelationManager
             ->where('user_name', 'like', "%{$search}%")
             ;
     }), 
-    SelectColumn::make('group_id')
-    ->label('Group')
-    ->options(
-        Group::query()->pluck('name', 'id')->toArray() // Replace 'name' and 'id' as needed
-    )->searchable(query: function (Builder $query, string $search): Builder {
-        return $query
-            ->where('group_name', 'like', "%{$search}%")
-            ;
-    }),
+   
             ])
             ->filters([
                 //

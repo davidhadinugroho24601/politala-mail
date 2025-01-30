@@ -9,8 +9,10 @@ class Group extends Model
     protected $table = 'groups';
     protected $fillable = [
         'name',
+        'description',
         'parent_id',
-        'manager_id'
+        'manager_id',
+        'acronym',
     ];
 
     public function groupDetailsView()

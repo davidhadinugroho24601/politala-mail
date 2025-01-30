@@ -27,6 +27,7 @@ use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Carbon;
 use Filament\Tables\Columns\ViewColumn;
 use App\Models\ApprovalChain;
+use App\Models\MailTemplate;
 
 class SentMailsResource extends Resource
 {
@@ -62,25 +63,35 @@ class SentMailsResource extends Resource
                 ])
             ,
 
-                RichEditor::make('content')
-                ->label('Mail Content')
-                ->columnSpan('full') // Ensures it uses the full width of the container
-                ->extraAttributes(['style' => 'word-wrap: break-word;']) // Ensures proper text wrapping
-                ->disabled(fn ($record) => $record && $record->status !== 'Draft')
-                ->afterStateUpdated(function ($state, $record) {
-                    if (!$record) {
-                        // If the record does not exist yet, do nothing
-                        return;
-                    }
-                    // Extract attachments from the content
-                    preg_match_all('/<img[^>]+src="([^">]+)"/', $state, $matches);
+            Forms\Components\Select::make('template_id')
+            ->label('Template')
+            ->options(
+                MailTemplate::pluck('name', 'id') // Filter options by session groupID
+            )
+            ->searchable()
+            ->required()
+            ,
             
-                    foreach ($matches[1] as $url) {
-                        // Process and save the image to storage
-                        $record->addMediaFromUrl($url)
-                            ->toMediaCollection('attachments');
-                    }
-                }),
+            RichEditor::make('content')
+            ->label('Mail Content')
+            ->columnSpan('full')
+            ->extraAttributes(['style' => 'word-wrap: break-word;'])
+            ->disabled(fn ($record) => $record && $record->status !== 'Draft')
+            ->afterStateUpdated(function ($state, $record) {
+                if (!$record) {
+                    return;
+                }
+        
+                // Extract image URLs from the content
+                preg_match_all('/<img[^>]+src="([^">]+)"/', $state, $matches);
+        
+                foreach ($matches[1] as $url) {
+                    $record->addMediaFromUrl($url)
+                        ->usingFileName('attachments/' . uniqid() . '.jpg') // Customize the path and filename
+                        ->toMediaCollection('attachments');
+                }
+            }),
+        
             
 
             Forms\Components\Select::make('group_id')
@@ -93,7 +104,12 @@ class SentMailsResource extends Resource
             ->disabled()
             ->default(session('groupID'))
             ->dehydrated(),
+
+
                 ]);
+
+
+               
 }
 
 public static function table(Table $table): Table
@@ -123,7 +139,7 @@ public static function table(Table $table): Table
             // ViewColumn::make('timeline')
             // ->label('Timeline')
             // ->view('filament.tables.columns.timeline-widget', [
-            //     'approvals' =>  fn ($record) => ApprovalChain::where('mail_id', $record->id)->orderBy('id')
+            //     'approvals' => ApprovalChain::orderBy('id')
             //         ->get()
             //         ->map(function ($approval) {
             //             // Dynamically add a color based on the status
@@ -138,7 +154,6 @@ public static function table(Table $table): Table
             //         }),
             // ])
             // ->extraAttributes(['class' => 'max-w-xs overflow-hidden truncate', 'style' => 'text-align: left;'])
-        
 
 
         ])

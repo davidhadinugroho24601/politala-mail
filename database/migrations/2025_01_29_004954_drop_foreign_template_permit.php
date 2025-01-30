@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_categories', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->timestamps();
+        Schema::table('template_permit', function (Blueprint $table) {
+            
+            $table->dropForeign('template_permit_user_id_foreign'); // If you know the exact constraint name
 
+            $table->unsignedBigInteger('group_id'); 
+            $table->foreign('group_id')->references('id')->on('groups')->onDelete('cascade');
 
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_categories');
+        //
     }
 };

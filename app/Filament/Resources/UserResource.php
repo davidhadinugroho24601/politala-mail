@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use App\Models\UserCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -31,13 +32,26 @@ class UserResource extends Resource
         return $form
             ->schema([
                 TextInput::make('name'),
+
                 TextInput::make('email'),
+
                 TextInput::make('password')->password(),
+
                 Select::make('role')
                 ->options([
                     'admin' => 'Admin',
                     'user' => 'User',
                 ])->selectablePlaceholder(false),
+
+                Forms\Components\Select::make('category_id')
+                ->label('Golongan')
+                ->options(
+                    UserCategory::pluck('name', 'id') // Filter options by session groupID
+                )
+                ->searchable()
+                ->required()
+                ,
+                    
                 
             ]);
     }

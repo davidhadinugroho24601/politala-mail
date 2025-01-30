@@ -27,15 +27,14 @@ class GroupResource extends Resource
     {
         return $form
             ->schema([
-                TextInput::make('name'),
+                TextInput::make('name')->required(),
+                TextInput::make('acronym')->label('Akronim')->required(),
+                TextInput::make('description')->label('Deskripsi')->required(),
                 Select::make('parent_id')
                     ->label('Parent Group')
                     ->options(Group::all()->pluck('name', 'id')),
                    
-             Select::make('manager_id')
-              ->label('Manager')
-              ->relationship('managers', 'name') 
-              ->searchable(), 
+             
             ]);
     }
 
@@ -47,19 +46,17 @@ class GroupResource extends Resource
                     ->translateLabel()
                     ->sortable()
                     ->searchable(),
+
+                TextColumn::make('acronym')
+                    ->label('Akronim')
+                    ->sortable()
+                    ->searchable(),
+                    
                 SelectColumn::make('parent_id')
                     ->label('Parent Group')
                     ->options(Group::all()->pluck('name', 'id')),
 
-                        SelectColumn::make('manager_id')
-            ->label('Manager')
-            ->options(
-                User::query()->pluck('name', 'id')->toArray() // Replace 'name' and 'id' as needed
-            )->searchable(query: function (Builder $query, string $search): Builder {
-                return $query
-                    ->where('user_name', 'like', "%{$search}%")
-                    ;
-            }), 
+                       
             ])
             ->filters([
                 // Add any filters here
@@ -72,19 +69,19 @@ class GroupResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            GroupDetailsViewRelationManager::class, 
-        ];
-    }
-    public static function getRouteMiddleware(Panel $panel): array
-    {
-        // Apply the middleware to the UserResource routes
-        return [
-            'checkGroupID' => CheckGroupIDSession::class,
-        ];
-    }
+    // public static function getRelations(): array
+    // {
+    //     return [
+    //         GroupDetailsViewRelationManager::class, 
+    //     ];
+    // }
+    // public static function getRouteMiddleware(Panel $panel): array
+    // {
+    //     // Apply the middleware to the UserResource routes
+    //     return [
+    //         'checkGroupID' => CheckGroupIDSession::class,
+    //     ];
+    // }
     public static function getPages(): array
     {
         return [

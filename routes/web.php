@@ -44,7 +44,7 @@ Route::get('/auth/google/callback', function () {
     Auth::login($user);
 
     // Redirect to the intended page or home
-    return redirect('/admin');
+    return redirect('/admin/your-roles');
 });
 
 
