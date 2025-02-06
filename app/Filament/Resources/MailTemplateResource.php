@@ -17,7 +17,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 
-class MailTemplateResource extends Resource
+class MailTemplateResource extends AdminResource
 {
     protected static ?string $model = MailTemplate::class;
 

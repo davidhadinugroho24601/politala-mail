@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 class GroupController extends Controller
 {
+    
     function setGroupID(Request $request, $groupID) {
         
         // Store the groupID in the session

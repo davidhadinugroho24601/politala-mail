@@ -1,4 +1,3 @@
-
 <x-filament-panels::page>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         @foreach ($groups as $group)
@@ -10,5 +9,15 @@
                 </a>
             </x-filament::card>
         @endforeach
+
+        {{-- Only show the admin card if the logged-in user's role is "admin" --}}
+        @if (auth()->check() && auth()->user()->role === 'admin')
+            <x-filament::card>
+                <a href="{{ route('set.group.id', ['groupID' => 'admin']) }}">
+                    <h3 class="text-xl font-semibold">Admin</h3>
+                    <p>Masuk sebagai admin.</p>
+                </a>
+            </x-filament::card>
+        @endif
     </div>
 </x-filament-panels::page>

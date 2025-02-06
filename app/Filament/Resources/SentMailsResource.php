@@ -29,7 +29,7 @@ use Filament\Tables\Columns\ViewColumn;
 use App\Models\ApprovalChain;
 use App\Models\MailTemplate;
 
-class SentMailsResource extends Resource
+class SentMailsResource extends BaseResource
 {
     protected static ?string $model = Mail::class;
 
@@ -46,22 +46,25 @@ class SentMailsResource extends Resource
             // Final Target ID - Dropdown populated with user names
                 Select::make('final_id')
                 ->label('Penerima')
-                ->options(User::pluck('name', 'id'))
+                ->options(Group::pluck('name', 'id'))
                 ->searchable()
                 ->required() 
                 ->disabled(fn ($record) => $record !== null),
 
 
                 TextInput::make('subject')
-                ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
+            ->required()
+            ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
                             
                 Select::make('is_staged')
-                ->label('Tipe Surat')
+            ->required()
+            ->label('Tipe Surat')
                 ->options([
                     'yes' => 'Berjenjang',
                     'no' => 'Langsung',
-                ])
-            ,
+                ])                
+                ->disabled(fn ($record) => $record !== null),
+
 
             Forms\Components\Select::make('template_id')
             ->label('Template')
@@ -70,12 +73,14 @@ class SentMailsResource extends Resource
             )
             ->searchable()
             ->required()
-            ,
+            ->disabled(fn ($record) => $record !== null),
+
             
             RichEditor::make('content')
             ->label('Mail Content')
             ->columnSpan('full')
             ->extraAttributes(['style' => 'word-wrap: break-word;'])
+            ->hidden(fn (string $context): bool => $context !== 'edit')
             ->disabled(fn ($record) => $record && $record->status !== 'Draft')
             ->afterStateUpdated(function ($state, $record) {
                 if (!$record) {

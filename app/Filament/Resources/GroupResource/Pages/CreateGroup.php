@@ -9,4 +9,11 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateGroup extends CreateRecord
 {
     protected static string $resource = GroupResource::class;
+
+   
+
+    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
+    {
+        
+    }
 }

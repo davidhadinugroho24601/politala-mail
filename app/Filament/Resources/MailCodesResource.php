@@ -19,7 +19,7 @@ use Filament\Forms\Components\NumberInput;
 use Filament\Tables\Columns\TextColumn;
 use App\Filament\Resources\MailCodesResource\RelationManagers\CodeDetailsRelationManager;
 
-class MailCodesResource extends Resource
+class MailCodesResource extends AdminResource
 {
     protected static ?string $model = MailCode::class;
 

@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UserCategoriesResource\Pages;
-use App\Filament\Resources\UserCategoriesResource\RelationManagers;
-use App\Models\UserCategory;
+use App\Filament\Resources\DivisionResource\Pages;
+use App\Filament\Resources\DivisionResource\RelationManagers;
+use App\Models\Division;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,13 +13,10 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use App\Filament\Resources\UserCategoriesResource\RelationManagers\UsersRelationManager;
 
-class UserCategoriesResource extends AdminResource
+class DivisionResource extends Resource
 {
-    protected static ?string $model = UserCategory::class;
+    protected static ?string $model = Division::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -27,7 +24,8 @@ class UserCategoriesResource extends AdminResource
     {
         return $form
             ->schema([
-                TextInput::make('name'),
+                TextInput::make('name')->required(),
+
             ]);
     }
 
@@ -35,7 +33,7 @@ class UserCategoriesResource extends AdminResource
     {
         return $table
             ->columns([
-                TextColumn::make('name'),
+                //
             ])
             ->filters([
                 //
@@ -53,16 +51,16 @@ class UserCategoriesResource extends AdminResource
     public static function getRelations(): array
     {
         return [
-            UsersRelationManager::class, 
+            //
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUserCategories::route('/'),
-            'create' => Pages\CreateUserCategories::route('/create'),
-            'edit' => Pages\EditUserCategories::route('/{record}/edit'),
+            'index' => Pages\ListDivisions::route('/'),
+            'create' => Pages\CreateDivision::route('/create'),
+            'edit' => Pages\EditDivision::route('/{record}/edit'),
         ];
     }
 }

@@ -19,6 +19,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Middleware\RedirectFilamentToBreezeLogin;
+use App\Http\Middleware\HideAdminNavigation;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -61,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
             DisableBladeIconComponents::class,
             DispatchServingFilamentEvent::class,
             RedirectFilamentToBreezeLogin::class,
+            HideAdminNavigation::class,
         ];
 
         // Apply CheckGroupIDSession to ALL `/admin/*` EXCEPT `/admin/your-roles*`

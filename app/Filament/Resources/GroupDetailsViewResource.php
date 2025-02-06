@@ -20,7 +20,7 @@ use Filament\Tables\Columns\SelectColumn;
 use App\Http\Middleware\CheckGroupIDSession;
 use Filament\Panel;
 
-class GroupDetailsViewResource extends Resource
+class GroupDetailsViewResource extends AdminResource
 {
     protected static ?string $model = GroupDetailsView::class;
 

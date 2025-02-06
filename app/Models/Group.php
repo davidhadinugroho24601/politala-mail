@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,8 +20,17 @@ class Group extends Model
     {
     return $this->hasMany(GroupDetailsView::class);
     }
-    public function managers()
-        {
-            return $this->belongsTo(User::class, 'manager_id');
-        }
+
+
+    public function children()
+    {
+        return $this->hasManyRecursive(Group::class);
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Group::class, 'parent_id');
+    }
+
+    
 }

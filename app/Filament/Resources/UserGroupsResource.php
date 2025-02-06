@@ -22,7 +22,7 @@ use Filament\Tables\Columns\SelectColumn;
 use Filament\Panel;
 use App\Http\Middleware\CheckGroupIDSession;
 
-class UserGroupsResource extends Resource
+class UserGroupsResource extends AdminResource
 {
     protected static ?string $model = Group::class;
 

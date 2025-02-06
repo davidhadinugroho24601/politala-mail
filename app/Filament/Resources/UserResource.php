@@ -21,7 +21,7 @@ use Filament\Tables\Columns\SelectColumn;
 use Filament\Forms\Components\RichEditor;
 use Filament\Panel;
 use App\Http\Middleware\CheckGroupIDSession;
-class UserResource extends Resource
+class UserResource extends AdminResource
 {
     protected static ?string $model = User::class;
 

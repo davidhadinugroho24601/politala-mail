@@ -17,12 +17,18 @@ use App\Models\User;
 use Filament\Panel;
 use App\Http\Middleware\CheckGroupIDSession;
 
-class GroupResource extends Resource
+class GroupResource extends AdminResource
 {
     protected static ?string $model = Group::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Jabatan';
+
+    protected static ?string $modelLabel = 'Jabatan';
+
+    protected static ?string $pluralModelLabel = 'Jabatan';
+    
     public static function form(Form $form): Form
     {
         return $form
@@ -52,7 +58,7 @@ class GroupResource extends Resource
                     ->sortable()
                     ->searchable(),
                     
-                SelectColumn::make('parent_id')
+                    TextColumn::make('parent_id')
                     ->label('Parent Group')
                     ->options(Group::all()->pluck('name', 'id')),
 

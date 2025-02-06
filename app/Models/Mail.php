@@ -26,6 +26,7 @@ class Mail extends Model implements HasMedia
      protected $fillable = [
          'writer_id',
          'target_id',
+         'template_id',
          'final_id',
          'group_id',
          'content',
