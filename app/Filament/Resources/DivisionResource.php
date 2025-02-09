@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
+use Filament\Tables\Columns\TextColumn;
+use App\Filament\Resources\DivisionResource\RelationManagers\GroupDivisionRelationManager;
 
 class DivisionResource extends Resource
 {
@@ -33,7 +35,10 @@ class DivisionResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('name')
+                    ->translateLabel()
+                    ->sortable()
+                    ->searchable(),
             ])
             ->filters([
                 //
@@ -51,7 +56,8 @@ class DivisionResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            GroupDivisionRelationManager::class,
+
         ];
     }
 

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
-
 class CodeDetailsRelationManager extends RelationManager
 {
     protected static string $relationship = 'codeDetails';
@@ -23,7 +22,8 @@ class CodeDetailsRelationManager extends RelationManager
                 Select::make('type')
                 ->options([
                     'text' => 'Text',
-                    'increment' => 'Increment',
+                    'increment' => 'Surat Terbit',
+                    'division' => 'Divisi',
                     'date' => 'Tanggal',
                     'month' => 'Bulan',
                     'year' => 'Tahun',
@@ -37,17 +37,7 @@ class CodeDetailsRelationManager extends RelationManager
                 ->visible(fn ($get) => $get('type') === 'text') // Show only when 'text' is selected
                 ->placeholder('Enter text here'),
     
-            TextInput::make('increment_start')
-                ->label('Increment Start')
-                ->required()
-                ->visible(fn ($get) => $get('type') === 'increment') // Show only when 'increment' is selected
-                ->numeric(),
-
-            TextInput::make('increment_limit')
-                ->label('Increment Start')
-                ->required()
-                ->visible(fn ($get) => $get('type') === 'increment') // Show only when 'increment' is selected
-                ->numeric(),
+            
     
 
                 
@@ -66,7 +56,36 @@ class CodeDetailsRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make() ->mutateFormDataUsing(function (array $data): array {
+                    // Modify the form data before saving
+                    switch ($data['type']) {
+                        case 'increment':
+                            $data['text'] = '{surat terbit}';
+                            break;
+
+                        case 'date':
+                            $data['text'] = '{tanggal}';
+                            break;
+                            
+                        case 'month':
+                            $data['text'] = '{bulan}';
+                            break;
+                            
+                        case 'year':
+                            $data['text'] = '{tahun}';
+                            break;
+
+                        case 'division':
+                                $data['text'] = '{divisi}';
+                                break;
+    
+                        default:
+                            // Optional: handle cases where 'type' doesn't match any case
+                            break;
+                    }
+                    
+                    return $data;
+                }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

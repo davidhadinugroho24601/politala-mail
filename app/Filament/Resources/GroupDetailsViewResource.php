@@ -19,6 +19,7 @@ use App\Models\Group;
 use Filament\Tables\Columns\SelectColumn;
 use App\Http\Middleware\CheckGroupIDSession;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GroupDetailsViewResource extends AdminResource
 {
@@ -107,4 +108,8 @@ class GroupDetailsViewResource extends AdminResource
             'checkGroupID' => CheckGroupIDSession::class,
         ];
     }
+
+
+
+
 }

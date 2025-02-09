@@ -40,7 +40,7 @@ class Mail extends Model implements HasMedia
 
         public function finalTarget()
     {
-        return $this->belongsTo(User::class, 'final_id');
+        return $this->belongsTo(Group::class, 'final_id');
     }
 
 }

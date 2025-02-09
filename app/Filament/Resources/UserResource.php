@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
+use App\Models\Group;
 use App\Models\UserCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -51,7 +52,14 @@ class UserResource extends AdminResource
                 ->searchable()
                 ->required()
                 ,
-                    
+                Select::make('group_id')
+                ->label('Jabatan')
+                ->options(
+                    Group::pluck('name', 'id') // Filter options by session groupID
+                )
+                ->searchable()
+                ->required()
+                , 
                 
             ]);
     }

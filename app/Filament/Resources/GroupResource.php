@@ -15,8 +15,8 @@ use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\SelectColumn;
 use App\Models\User;
 use Filament\Panel;
-use App\Http\Middleware\CheckGroupIDSession;
-
+// use App\Http\Middleware\CheckGroupIDSession;
+use App\Models\Division;
 class GroupResource extends AdminResource
 {
     protected static ?string $model = Group::class;
@@ -39,7 +39,9 @@ class GroupResource extends AdminResource
                 Select::make('parent_id')
                     ->label('Parent Group')
                     ->options(Group::all()->pluck('name', 'id')),
-                   
+                Select::make('division_id')
+                    ->label('Divisi')
+                    ->options(Division::all()->pluck('name', 'id')),
              
             ]);
     }
@@ -58,7 +60,7 @@ class GroupResource extends AdminResource
                     ->sortable()
                     ->searchable(),
                     
-                    TextColumn::make('parent_id')
+                    SelectColumn::make('parent_id')
                     ->label('Parent Group')
                     ->options(Group::all()->pluck('name', 'id')),
 
@@ -75,12 +77,12 @@ class GroupResource extends AdminResource
             ]);
     }
 
-    // public static function getRelations(): array
-    // {
-    //     return [
-    //         GroupDetailsViewRelationManager::class, 
-    //     ];
-    // }
+    public static function getRelations(): array
+    {
+        return [
+            GroupDetailsViewRelationManager::class, 
+        ];
+    }
     // public static function getRouteMiddleware(Panel $panel): array
     // {
     //     // Apply the middleware to the UserResource routes

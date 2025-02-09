@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Columns\TextColumn;
 
 class ReceivedMailsResource extends Resource
 {
@@ -36,7 +37,8 @@ class ReceivedMailsResource extends Resource
     {
         return $table
             ->columns([
-                //
+                TextColumn::make('subject'),
+
             ])
             ->filters([
                 //
@@ -69,7 +71,11 @@ class ReceivedMailsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('target_id', session('groupID'))->where('writer_id', auth()->id());
+        return parent::getEloquentQuery()
+    ->withoutGlobalScopes()
+    ->where('target_id', session('groupID'))
+    ->where('status', 'Submitted');
+
     }
 
 }

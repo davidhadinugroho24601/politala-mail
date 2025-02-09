@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Tables\Columns\SelectColumn;
+use Filament\Tables\Columns\TextColumn;
 use App\Models\User;
 use App\Models\Group;
 use Filament\Forms\Components\Select;
@@ -44,7 +45,8 @@ class GroupDetailsViewRelationManager extends RelationManager
                 Select::make('user_id')
                     ->label('User')
                     ->relationship('users', 'name') 
-                    ->searchable(), 
+                    ->searchable()
+                    ->preload(), 
            
             ]);
     }
@@ -53,15 +55,9 @@ class GroupDetailsViewRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                SelectColumn::make('user_id')
-    ->label('User')
-    ->options(
-        User::query()->pluck('name', 'id')->toArray() // Replace 'name' and 'id' as needed
-    )->searchable(query: function (Builder $query, string $search): Builder {
-        return $query
-            ->where('user_name', 'like', "%{$search}%")
-            ;
-    }), 
+                TextColumn::make('users.name')->label('User Name'),
+
+                
    
             ])
             ->filters([
@@ -69,6 +65,7 @@ class GroupDetailsViewRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make() ->label('New '. self::getLabel("Singular")),
+                
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

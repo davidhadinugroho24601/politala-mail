@@ -41,7 +41,29 @@ class MailCodesResource extends AdminResource
                     ]
                 )
                 ->required(),
-
+                
+                TextInput::make('code')
+                ->label('Kode Surat')
+                ->afterStateHydrated(function ($component, $state, $record) {
+                    if ($record) {
+                        $mailCodeId = $record->id;
+                        $mergedText = MailCodeDetail::where('code_id', $mailCodeId)
+                            ->pluck('text')
+                            ->map(fn($text) => trim(preg_replace('/\s+/', ' ', $text)))
+                            ->implode('/');
+                        $component->state($mergedText);
+                    }
+                })
+                ->beforeStateDehydrated(function ($state, $record, $set) {
+                    if ($record) {
+                        $record->code = $state;
+                    } else {
+                        $set('code', $state);
+                    }
+                })
+                ->disabled(),
+            
+            
             ]);
     }
 
