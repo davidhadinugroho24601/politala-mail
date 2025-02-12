@@ -16,4 +16,16 @@ class EditMailCodes extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if ($data['status'] === 'enabled') {
+            // Disable all other rows before enabling the selected one
+            \App\Models\MailCode::where('id', '!=', $this->record->id)
+                ->update(['status' => 'disabled']);
+        }
+    
+        return $data;
+    }
+    
 }

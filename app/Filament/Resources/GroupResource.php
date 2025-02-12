@@ -55,10 +55,7 @@ class GroupResource extends AdminResource
                     ->sortable()
                     ->searchable(),
 
-                TextColumn::make('acronym')
-                    ->label('Akronim')
-                    ->sortable()
-                    ->searchable(),
+            
                     
                     SelectColumn::make('parent_id')
                     ->label('Parent Group')

@@ -27,7 +27,10 @@ class DivisionResource extends Resource
         return $form
             ->schema([
                 TextInput::make('name')->required(),
-
+                TextColumn::make('acronym')
+                ->label('Akronim')
+                ->sortable()
+                ->searchable(),
             ]);
     }
 
@@ -36,6 +39,11 @@ class DivisionResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')
+                    ->translateLabel()
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('acronym')
+                ->label('Akronim')
                     ->translateLabel()
                     ->sortable()
                     ->searchable(),

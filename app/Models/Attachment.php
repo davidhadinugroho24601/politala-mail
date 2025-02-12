@@ -11,7 +11,10 @@ class Attachment extends Model
         'path',
         
     ];
-
+    protected $casts = [
+        'path' => 'array',
+    ];
+ 
 
     public function parent()
     {

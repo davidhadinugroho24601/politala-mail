@@ -76,7 +76,7 @@ class CodeDetailsRelationManager extends RelationManager
                             break;
 
                         case 'division':
-                                $data['text'] = '{divisi}';
+                                $data['text'] = '{akronim divisi}';
                                 break;
     
                         default:

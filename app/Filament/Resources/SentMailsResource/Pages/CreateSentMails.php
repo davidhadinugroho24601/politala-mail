@@ -15,9 +15,11 @@ class CreateSentMails extends CreateRecord
 {
     protected static string $resource = SentMailsResource::class;
 
-
-    function findShortestPath($startId, $finalId) {
-        // Initialize the queue with the starting node and the path leading to it
+    /**
+     * Find the shortest path between two group IDs.
+     */
+    private function findShortestPath($startId, $finalId) {
+        // Initialize the queue with the starting node and its path
         $queue = [[$startId]];
         // Keep track of visited nodes to prevent revisiting
         $visited = [$startId => true];
@@ -30,25 +32,24 @@ class CreateSentMails extends CreateRecord
     
             // If the current node is the final destination
             if ($currentId == $finalId) {
-                // If the path length is greater than 1, remove the first node
-                if (count($path) > 1) {
-                    array_shift($path);
-                }
-                return $path;
+                // Remove the start node from the result if there are multiple nodes
+                return count($path) > 1 ? array_slice($path, 1) : $path;
             }
     
             // Retrieve child groups of the current node
-            $children = Group::where('parent_id', $currentId)->pluck('id');
+            $children = Group::where('parent_id', $currentId)->pluck('id')->toArray();
+            // Retrieve parent group of the current node
+            $parent = Group::where('id', $currentId)->value('parent_id');
     
-            // Iterate over each child
-            foreach ($children as $childId) {
-                // If the child hasn't been visited yet
-                if (!isset($visited[$childId])) {
-                    // Mark it as visited
-                    $visited[$childId] = true;
-                    // Enqueue a new path extending the current path with the child node
+            // Merge both child and parent nodes into one array
+            $neighbors = array_filter(array_merge($children, [$parent]));
+    
+            // Iterate over each neighbor (child and parent)
+            foreach ($neighbors as $neighborId) {
+                if (!isset($visited[$neighborId])) {
+                    $visited[$neighborId] = true;
                     $newPath = $path;
-                    $newPath[] = $childId;
+                    $newPath[] = $neighborId;
                     $queue[] = $newPath;
                 }
             }
@@ -59,191 +60,92 @@ class CreateSentMails extends CreateRecord
     }
     
 
-    function getParentGroupIds($groupId, $finalId) {
-        $parentIds = [];
-    
-        $group = Group::find($groupId);
-    
-        while ($group && $group->parent_id) {
+    /**
+     * Get all parent groups of a given group ID.
+     */
+    // private function getParentGroupIds($groupId, $finalId)
+    // {
+    //     $parentIds = [];
+    //     $group = Group::find($groupId);
 
-            $parentIds[] = $group->parent_id;
-            $group = Group::find($group->parent_id, $finalId);
+    //     while ($group && $group->parent_id) {
+    //         $parentIds[] = $group->parent_id;
+    //         if ($group->parent_id == $finalId) break;
+    //         $group = Group::find($group->parent_id);
+    //     }
 
-            if ($child->id == $finalId) {break;}
+    //     return $parentIds;
+    // }
 
-        }
-    
-        return $parentIds;
-    }
-
+    /**
+     * Handle record creation with approval chain logic.
+     */
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
     {
-     
-        // Fetch groups where parent_id is not null
-        // Set the writer_id to the authenticated user's ID
         $data['writer_id'] = auth()->id();
         $data['status'] = 'Draft';
-    // Check if a template_id was provided from the form submission
-    if (isset($data['template_id'])) {
-        // Retrieve the mail template based on the provided template_id
-        $mailTemplate = MailTemplate::find($data['template_id']);
-        // Assign the template content to the 'content' field if available
-        $data['content'] = $mailTemplate ? $mailTemplate->template : '';
-    } else {
-        // Fallback if no template_id was provided
-        $data['content'] = '';
-    }
-        // Save the record first to get the ID
-        $record = $this->getModel()::create($data);
-        // dd($record->group_id);
-        $currentGroupId = $record->group_id;
-        
-        $status='down';
+        $data['content'] = MailTemplate::find($data['template_id'])?->template ?? '';
 
-        $parentIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
-        $childIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
-        if (in_array($record->final_id, $parentIDs)) {
-           $status = 'up';
-        } 
+        $record = $this->getModel()::create($data);
+       
+        
+        $currentGroupId = $record->group_id;
+        // $status = 'down';
+
+        $pathIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
+        // $childIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
+
+        // if (in_array($record->final_id, $parentIDs)) {
+        //     $status = 'up';
+        // }
 
         if ($record->is_staged === 'yes') {
-            // Assuming $status is defined elsewhere in your code (either "down" or "up")
-        if ($status == 'down') {
-            
-
-        
-            // Run child group logic
-            foreach ($childIDs as $childId) {
-                $chain = [
-                    'mail_id' => $record->id, // Use the saved record's ID
-                    'group_id' => $childId,   // Use the child_id for the group
-                ];
-                // if (empty($childIDs)) {
-
-                //     $chain = [
-                //         'mail_id' => $record->id, // Use the saved record's ID
-                //         'group_id' => session('groupID'),   // Use the child_id for the group
-                //     ];
-                // ApprovalChain::insert($chain);
-
-                // }
-                // dd($chain); // You can still use dd() for debugging
-                ApprovalChain::insert($chain);
-               
-
+            $this->createApprovalChain($record->id, $pathIDs);
+            if (!empty($pathIDs)) {
+                // Update the record with the first target_id in the path
+                $record->update(['target_id' => $pathIDs[0]]);
             }
-            // dd($data['target_id']);
-
-                            // Set 'target_id' to the first element of $parentIDs if it exists
-                            if (!empty($childIDs)) {
-                                $data['target_id'] = $parentIDs[0];
-                                // dd($data['target_id']);
-
-                            } else {
-                                // Handle the case where $parentIDs is empty
-                                // For example, set 'target_id' to null or handle accordingly
-                                // dd($data['target_id']);
-                                $data['target_id'] = null;
-                            }
-                
         }
-        
-        elseif ($status == 'up') {
-
-
-
-            // Run parent group logic
-            foreach ($parentIDs as $parentId) {
-                $chain = [
-                    'mail_id' => $record->id, // Use the saved record's ID
-                    'group_id' => $parentId,   // Use the parent_id for the group
-                ];
-
-                // dd($chain); // You can still use dd() for debugging
-                ApprovalChain::insert($chain);
-              
-
-            }
-                        // Set 'target_id' to the first element of $parentIDs if it exists
-            if (!empty($parentIDs)) {
-                $data['target_id'] = $parentIDs[0];
-            } else {
-                // Handle the case where $parentIDs is empty
-                // For example, set 'target_id' to null or handle accordingly
-                $data['target_id'] = null;
-            }
-
-        }
-        }
-        
-        
-        $currentGroupId = $data['group_id'];
-        if (isset($data['final_id'])) {
-            // Retrieve descendant and ancestor IDs using our updated functions.
-            $childIds = $this->findShortestPath($currentGroupId, $data['final_id']);
-            $parentIds = $this->findShortestPath($currentGroupId, $data['final_id']);
-            // dd($childIds);
-            if (!in_array($data['final_id'], $childIds) and !in_array($data['final_id'], $parentIds) and $data['final_id']!= session('groupID')) {
-                Notification::make()
-                    ->title('Invalid Target')
-                    ->body('The selected target is not connected to the sender.')
-                    ->danger()
-                    ->send();
-        
-                throw ValidationException::withMessages([
-                    'final_id' => 'Invalid operation: The selected parent group is a descendant of the current group.',
-                ]);
-            }
-            
-            // if (!in_array($data['final_id'], $parentIds)) {
-            //     Notification::make()
-            //         ->title('Invalid Target')
-            //         ->body('The selected target is not connected to the sender.')
-            //         ->danger()
-            //         ->send();
-        
-            //     throw ValidationException::withMessages([
-            //         'parent_id' => 'Invalid operation: The selected parent group is an ancestor of the current group.',
-            //     ]);
-            // }
-        }
+        // dd($pathIDs);
+        $this->validateTargetConnection($currentGroupId, $data['final_id']);
 
         return $record;
     }
 
-    // protected function afterCreate(): void
-    // {
-    //     $currentGroupId = $this->record->final_id;
-    
-    //     if (isset($data['final_id'])) {
-    //         // Retrieve descendant and ancestor IDs using our updated functions.
-    //         $childIds = $this->getChildGroupIds($currentGroupId);
-    //         $parentIds = $this->getParentGroupIds($currentGroupId);
-            
-    //         if (in_array($data['final_id'], $childIds)) {
-    //             Notification::make()
-    //                 ->title('Invalid Parent Group')
-    //                 ->body('The selected parent group is a descendant of the current group.')
-    //                 ->danger()
-    //                 ->send();
-        
-    //             throw ValidationException::withMessages([
-    //                 'parent_id' => 'Invalid operation: The selected parent group is a descendant of the current group.',
-    //             ]);
-    //         }
-            
-    //         if (in_array($data['final_id'], $parentIds)) {
-    //             Notification::make()
-    //                 ->title('Invalid Parent Group')
-    //                 ->body('The selected parent group is an ancestor of the current group.')
-    //                 ->danger()
-    //                 ->send();
-        
-    //             throw ValidationException::withMessages([
-    //                 'parent_id' => 'Invalid operation: The selected parent group is an ancestor of the current group.',
-    //             ]);
-    //         }
-    //     }
-    // }
-    
+    /**
+     * Create approval chain entries.
+     */
+    private function createApprovalChain($mailId, array $groupIds)
+    {
+        $approvalChains = array_map(fn ($groupId) => [
+            'mail_id' => $mailId,
+            'group_id' => $groupId,
+        ], $groupIds);
+        if (!empty($approvalChains)) {
+            ApprovalChain::insert($approvalChains);
+        }
+    }
+
+    /**
+     * Validate if the final_id is connected to the sender.
+     */
+    private function validateTargetConnection($currentGroupId, $finalId)
+    {
+        $connectedGroups = array_merge(
+            $this->findShortestPath($currentGroupId, $finalId),
+            $this->findShortestPath($finalId, $currentGroupId)
+        );
+
+        if (!in_array($finalId, $connectedGroups) && $finalId != session('groupID')) {
+            Notification::make()
+                ->title('Invalid Target')
+                ->body('The selected target is not connected to the sender.')
+                ->danger()
+                ->send();
+
+            throw ValidationException::withMessages([
+                'final_id' => 'Invalid operation: The selected group is not connected.',
+            ]);
+        }
+    }
 }

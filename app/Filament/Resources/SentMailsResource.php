@@ -28,6 +28,8 @@ use Illuminate\Support\Carbon;
 use Filament\Tables\Columns\ViewColumn;
 use App\Models\ApprovalChain;
 use App\Models\MailTemplate;
+use App\Filament\Resources\SentMailsResource\RelationManagers\AttachmentMailRelationManager;
+use Filament\Forms\Components\View;
 
 class SentMailsResource extends BaseResource
 {
@@ -42,7 +44,13 @@ class SentMailsResource extends BaseResource
 
         return $form
         ->schema([
-           
+            Forms\Components\Section::make('Approval Timeline')
+                ->schema([
+                    View::make('filament.tables.columns.timeline-widget')
+                        ->label(false) // Hides default label
+            ->columnSpanFull()
+            ,
+                ]),
             // Final Target ID - Dropdown populated with user names
                 Select::make('final_id')
                 ->label('Penerima')
@@ -181,6 +189,25 @@ public static function table(Table $table): Table
                     // Your custom logic here
                     // Example: Mark the mail as "Sent"
                     $record->update(['status' => 'Submitted']);
+                    if(!$record->released){
+                        $record->update(['released' => true]);
+                        $firstReport = Report::first();
+
+                        if ($firstReport) {
+                            $firstReport->increment('created_mails');
+                        } else {
+                            $firstReport = Report::create(['created_mails' => 1]);
+                        }
+                        
+                    }
+                    
+                   
+
+                // Reset all "denied" approvals back to "waiting"
+                ApprovalChain::where('mail_id', $record->id)
+                    ->where('status', 'denied')
+                    ->update(['status' => 'waiting']);
+
                     Notification::make()
                         ->title('Mail sent successfully!')
                         ->success()
@@ -202,7 +229,7 @@ public static function table(Table $table): Table
     public static function getRelations(): array
     {
         return [
-            //
+            AttachmentMailRelationManager::class,
         ];
     }
 

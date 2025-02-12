@@ -6,7 +6,9 @@ use App\Filament\Resources\SentMailsResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use App\Models\ApprovalChain;
-
+use App\Models\MailCode;
+use App\Models\Division;
+use App\Models\Group;
 class EditSentMails extends EditRecord
 {
     protected static string $resource = SentMailsResource::class;
@@ -50,32 +52,34 @@ class EditSentMails extends EditRecord
             }
         }
 
-        // Function to replace placeholders
-        $replacePlaceholder = function ($content, $placeholder) {
-            switch ($placeholder) {
-                case '{kode surat}':
-                    return str_replace($placeholder, '-replace kode surat berhasil-', $content);
-                break;
 
-                case '{nama pengirim}':
-                    return str_replace($placeholder, '-replace nama pengirim berhasil-', $content);
-                break;
+// Function to replace placeholders dynamically
+$replacePlaceholders = function ($content) {
+    $divisionAcronym = Group::where('id', session('groupID'))
+    ->with('division') // Ensure the relationship is loaded
+    ->first()
+    ?->division
+    ?->acronym;
 
-                case '{jabatan}':
-                    return str_replace($placeholder, '-replace jabatan berhasil-', $content);
-                break;
+    $enabledMailCode = MailCode::where('status', 'enabled')->value('code') ?? '-replace kode surat gagal-';
+    // $divisionAcronym  = Division::where('')->value('acronym') is division of Group:: where group belongsTo Division
+    $placeholders = [
+        '{kode surat}' => $enabledMailCode,
+        '{nama pengirim}' => '-replace nama pengirim berhasil-',
+        '{jabatan}' => '-replace jabatan berhasil-',
+        '{NIP}' => '-replace NIP berhasil-',
+        '{akronim divisi}' => $divisionAcronym,
+        '{tanggal}' => date('d'), // Replace with current day
+        '{bulan}' => date('m'),   // Replace with current month
+        '{tahun}' => date('Y'),
+    ];
 
-                case '{NIP}':
-                    return str_replace($placeholder, '-replace NIP berhasil-', $content);
-                break;
-                // Add more cases here for other placeholders if needed
-                default:
-                    return $content;
-            }
-        };
+    return str_replace(array_keys($placeholders), array_values($placeholders), $content);
+};
 
-        // Apply the replacement function to the content
-        $data['content'] = $replacePlaceholder($dom->saveHTML(), '{group id}');
+// Apply the replacement function to the content
+$data['content'] = $replacePlaceholders($dom->saveHTML());
+
     }
 
     // Retrieve the first ApprovalChain record where mail_id equals the current record's id and status is 'waiting'
@@ -83,12 +87,22 @@ class EditSentMails extends EditRecord
         'mail_id' => $this->record->id,
         'status' => 'waiting',
     ]);
+
+    $deniedChain = ApprovalChain::firstWhere([
+        'mail_id' => $this->record->id,
+        'status' => 'denied',
+    ]);
+
+    // dd($approvalChain);
     // Ensure the ApprovalChain record exists before accessing its properties
     if ($approvalChain) {
 // dd($approvalChain->group_id);
 
         $data['target_id'] = $approvalChain->group_id;
-    } else {
+    } elseif($deniedChain) {
+        $data['target_id'] = $deniedChain->group_id;
+    }
+    else{
 
 
         // Handle the case where no matching ApprovalChain record is found

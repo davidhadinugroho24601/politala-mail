@@ -32,5 +32,8 @@ class Group extends Model
         return $this->belongsTo(Group::class, 'parent_id');
     }
 
-    
+    public function division()
+    {
+        return $this->belongsTo(Division::class);
+    }
 }

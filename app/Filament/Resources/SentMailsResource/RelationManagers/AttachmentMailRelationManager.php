@@ -9,10 +9,13 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-class AttcahmentMailRelationManager extends RelationManager
+use Filament\Forms\Components\FileUpload;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+use ZipArchive;
+class AttachmentMailRelationManager extends RelationManager
 {
-    protected static string $relationship = 'AttcahmentMail';
+    protected static string $relationship = 'AttachmentMail';
 
     public function form(Form $form): Form
     {
@@ -21,6 +24,9 @@ class AttcahmentMailRelationManager extends RelationManager
                 Forms\Components\TextInput::make('description')
                     ->required()
                     ->maxLength(255),
+
+            
+            FileUpload::make('path')->directory('attachments')->multiple()->columnSpan('full')->enableDownload(),
             ]);
     }
 
@@ -45,6 +51,8 @@ class AttcahmentMailRelationManager extends RelationManager
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+
+                
             ]);
     }
 }

@@ -1,49 +1,75 @@
 <style>
-.timeline {
-  list-style-type: none;
-  padding-left: 0;
-  margin: 0;
-  text-align: left;
-}
+  .container {
+    max-width: 900px;
+    margin: 40px auto;
+    text-align: center;
+  }
 
-.timeline-item {
-  display: flex;
-  flex-direction: column;
-  padding-left: 20px;
-  position: relative;
-  margin-bottom: 20px;
-  border-radius: 4px; /* Optional for smoother look */
-}
+  .timeline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding: 20px 0;
+  }
 
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 10px;
-  height: 100%;
-}
+  .timeline::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: #dcdcdc;
+    z-index: -1;
+  }
 
-.timeline-time {
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: #2c3e50; /* Adjust to your desired color */
-}
+  .timeline li {
+    list-style: none;
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
 
-.timeline-content {
-  padding-left: 20px;
-  font-size: 14px;
-  color: #7f8c8d; /* Adjust to your desired color */
-}
+  .timeline li:before {
+    content: "";
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: block;
+    margin: auto;
+    background-color: currentColor; /* Nodes are fully filled */
+    border: 4px solid currentColor; /* Matches border with fill */
+    transition: all 0.3s ease-in-out;
+  }
 
+  .timeline li .label {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+
+  .timeline li .status {
+    font-size: 12px;
+    color: #7f8c8d;
+  }
+
+  /* Hover effect */
+  .timeline li:hover:before {
+    transform: scale(1.1);
+    filter: brightness(1.2); /* Slight highlight on hover */
+  }
 </style>
-<div class="timeline">
-  @foreach ($approvals as $approval)
 
-    <div class="timeline-item" style="border-left: 10px solid {{ $approval['color'] }}">
-      <div class="timeline-time">{{ $approval['status'] }}</div>
-      <div class="timeline-content">{{ $approval['status'] }}</div>
-    </div>
-  @endforeach
+<div class="container">
+  <ul class="timeline">
+    @foreach ($getRecord()->approvals ?? [] as $approval)
+      <li style="color: {{ $approval['color'] ?? '#3498db' }};">
+        <span class="label">{{ $approval['name'] }}</span>
+        <br>
+        <span class="status">{{ $approval['status'] }}</span>
+      </li>
+    @endforeach
+  </ul>
 </div>
-
