@@ -48,7 +48,7 @@
     font-size: 14px;
     font-weight: bold;
     color: #2c3e50;
-  }
+  } 
 
   .timeline li .status {
     font-size: 12px;

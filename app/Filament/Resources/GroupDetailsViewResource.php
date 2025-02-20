@@ -21,11 +21,13 @@ use App\Http\Middleware\CheckGroupIDSession;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class GroupDetailsViewResource extends AdminResource
+class GroupDetailsViewResource extends Resource
 {
     protected static ?string $model = GroupDetailsView::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+   
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function getLabel(): string
     {

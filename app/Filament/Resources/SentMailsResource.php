@@ -16,6 +16,7 @@ use App\Models\Group;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\RichEditor;
+
 use Filament\Forms\Components\TextInput;
 use Filament\Panel;
 use App\Http\Middleware\CheckGroupIDSession;
@@ -30,6 +31,10 @@ use App\Models\ApprovalChain;
 use App\Models\MailTemplate;
 use App\Filament\Resources\SentMailsResource\RelationManagers\AttachmentMailRelationManager;
 use Filament\Forms\Components\View;
+use Filament\Forms\Components\Textarea;
+use Illuminate\Support\HtmlString;
+
+
 
 class SentMailsResource extends BaseResource
 {
@@ -37,7 +42,10 @@ class SentMailsResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     
-
+    
+    
+   
+    
 
     public static function form(Form $form): Form
     {
@@ -84,26 +92,44 @@ class SentMailsResource extends BaseResource
             ->disabled(fn ($record) => $record !== null),
 
             
-            RichEditor::make('content')
-            ->label('Mail Content')
+
+            View::make('components.google-docs-editor')
+            ->label('Google Docs Editor')
             ->columnSpan('full')
-            ->extraAttributes(['style' => 'word-wrap: break-word;'])
+            ->disabled()
             ->hidden(fn (string $context): bool => $context !== 'edit')
-            ->disabled(fn ($record) => $record && $record->status !== 'Draft')
-            ->afterStateUpdated(function ($state, $record) {
-                if (!$record) {
-                    return;
-                }
+            ->extraAttributes(['style' => 'width: 100%; height: 600px; border: none;']),
+
+
+
+
+        //     RichEditor::make('content')
+        //     ->label('Mail Content')
+        //     ->columnSpan('full')
+        //     ->extraAttributes(['style' => 'word-wrap: break-word;']) 
+        //     ->toolbarButtons([
+        //         'bold', 'italic', 'underline', 'strike',
+        //         'bulletList', 'orderedList', 'blockquote', 'codeBlock',
+        //         'alignLeft', 'alignCenter', 'alignRight', 'alignJustify', 
+        //         'link', 
+        //     ])
+        //     ->hidden(fn (string $context): bool => $context !== 'edit')
+        //     ->disabled(fn ($record) => $record && $record->status !== 'Draft')
+        //     ->afterStateUpdated(function ($state, $record) {
+        //         if (!$record) {
+        //             return;
+        //         }
         
-                // Extract image URLs from the content
-                preg_match_all('/<img[^>]+src="([^">]+)"/', $state, $matches);
+        //         // Extract image URLs from the content
+        //         preg_match_all('/<img[^>]+src="([^">]+)"/', $state, $matches);
         
-                foreach ($matches[1] as $url) {
-                    $record->addMediaFromUrl($url)
-                        ->usingFileName('attachments/' . uniqid() . '.jpg') // Customize the path and filename
-                        ->toMediaCollection('attachments');
-                }
-            }),
+        //         foreach ($matches[1] as $url) {
+        //             $record->addMediaFromUrl($url)
+        //                 ->usingFileName('attachments/' . uniqid() . '.jpg') // Customize the path and filename
+        //                 ->toMediaCollection('attachments');
+        //         }
+        //     })
+        //    ,
         
             
 
@@ -117,7 +143,12 @@ class SentMailsResource extends BaseResource
             ->disabled()
             ->default(session('groupID'))
             ->dehydrated(),
-
+            
+          
+        
+        
+        
+        
 
                 ]);
 
@@ -182,9 +213,10 @@ public static function table(Table $table): Table
                 ->tooltip(fn ($record) => $record->status === 'Submitted' 
                     ? 'View' 
                     : 'Edit'),
+                    
                 Action::make('sendMail') // The action's name
                 ->label('Send Mail') // Button label
-                ->icon('heroicon-o-envelope') // Optional: Add an icon
+                ->icon('heroicon-o-paper-airplane') // Optional: Add an icon
                 ->action(function ($record) { // Define the logic when the action is triggered
                     // Your custom logic here
                     // Example: Mark the mail as "Sent"
@@ -213,10 +245,29 @@ public static function table(Table $table): Table
                         ->success()
                         ->send();
                 })
-                ->requiresConfirmation() // Optional: Add a confirmation dialog
+                ->requiresConfirmation() 
                 ->color('success')
                 ->hidden(fn ($record) => $record->status === 'Submitted'), // Optional: Define the button color
-       
+
+
+
+                Tables\Actions\Action::make('viewNotes')
+                ->label('Catatan')
+                ->icon('heroicon-o-envelope')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading(fn ($record) => 'Catatan dari ' . collect($record->rejecter())->pluck('name')->implode(', '))
+                ->modalDescription(fn ($record) => $record->notes)
+                ->modalIcon('heroicon-o-envelope')
+                ->modalSubmitActionLabel('Close')
+                ->modalCancelAction(false) // Removes the Cancel button
+            
+              
+                ->hidden(fn ($record) => empty($record->notes)),
+                
+            
+
+            
 
             ])
             ->bulkActions([

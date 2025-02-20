@@ -16,12 +16,17 @@ use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
 use App\Filament\Resources\DivisionResource\RelationManagers\GroupDivisionRelationManager;
 
-class DivisionResource extends Resource
+class DivisionResource extends AdminResource
 {
     protected static ?string $model = Division::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Divisi';
+
+    protected static ?string $modelLabel = 'Divisi';
+
+    protected static ?string $pluralModelLabel = 'Divisi';
     public static function form(Form $form): Form
     {
         return $form

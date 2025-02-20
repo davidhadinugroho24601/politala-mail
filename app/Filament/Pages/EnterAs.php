@@ -13,8 +13,8 @@ use Illuminate\Support\Facades\Auth;
 class EnterAs extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
-    protected static ?string $title = 'Your Roles';
-    protected static ?string $navigationLabel = 'Your Roles';
+    protected static ?string $title = 'Daftar Role';
+    protected static ?string $navigationLabel = 'Daftar Role';
     protected static ?string $slug = 'your-roles';
     protected static string $view = 'filament.pages.enter-as';
     // protected static string $layout = 'layouts.filament-custom';

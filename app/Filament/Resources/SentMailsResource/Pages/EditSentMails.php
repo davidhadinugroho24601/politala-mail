@@ -9,6 +9,7 @@ use App\Models\ApprovalChain;
 use App\Models\MailCode;
 use App\Models\Division;
 use App\Models\Group;
+
 class EditSentMails extends EditRecord
 {
     protected static string $resource = SentMailsResource::class;
@@ -24,6 +25,7 @@ class EditSentMails extends EditRecord
     // {
        
     // }
+  
 
     protected function mutateFormDataBeforeSave(array $data): array
 {

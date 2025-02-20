@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\HasMedia;
 use App\Models\Group;
+use App\Models\MailTemplate;
 class Mail extends Model implements HasMedia
 {
     use InteractsWithMedia;
@@ -34,8 +35,11 @@ class Mail extends Model implements HasMedia
          'status',
          'is_staged',
          'subject',
+         'notes',
         'created_at',
         'updated_at',
+        'google_doc_link',
+        'pdf_path',
 
      ];
 
@@ -43,7 +47,11 @@ class Mail extends Model implements HasMedia
     {
         return $this->belongsTo(Group::class, 'final_id');
     }
-    
+   
+    // public function Disposition()
+    // {
+    //     return $this->belongsTo(Disposition::class, 'disposition_id');
+    // }
 
     public function AttachmentMail()
     {
@@ -77,5 +85,28 @@ class Mail extends Model implements HasMedia
         };
     }
     
+    public function approvalChains()
+    {
+        return $this->hasMany(ApprovalChain::class, 'mail_id');
+    }
 
+
+    public function rejecter()
+    {
+        return \App\Models\ApprovalChain::where('mail_id', $this->id)->where('status', 'denied')
+        ->orderBy('created_at', 'asc') // Ensure chronological order
+        ->get()
+        ->map(function ($approval) {
+            return [
+                // 'status' => $approval->status,
+                'name' => Group::where('id',$approval->group_id)->value('name'),
+                // 'color' => $this->getStatusColor($approval->status),
+            ];
+        })->toArray();
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(MailTemplate::class);
+    }
 }

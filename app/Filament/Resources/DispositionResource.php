@@ -2,37 +2,33 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\UserCategoriesResource\Pages;
-use App\Filament\Resources\UserCategoriesResource\RelationManagers;
-use App\Models\UserCategory;
+use App\Filament\Resources\DispositionResource\Pages;
+use App\Filament\Resources\DispositionResource\RelationManagers;
+use App\Models\Disposition;
 use Filament\Forms;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Select;
-use Filament\Tables\Columns\TextColumn;
-use App\Filament\Resources\UserCategoriesResource\RelationManagers\UsersRelationManager;
 
-class UserCategoriesResource extends AdminResource
+class DispositionResource extends AdminResource
 {
-    protected static ?string $model = UserCategory::class;
+    protected static ?string $model = Disposition::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationLabel = 'Disposisi';
 
-    protected static ?string $navigationLabel = 'Golongan';
+    protected static ?string $modelLabel = 'Disposisi';
 
-    protected static ?string $modelLabel = 'Golongan';
-
-    protected static ?string $pluralModelLabel = 'Golongan';
+    protected static ?string $pluralModelLabel = 'Disposisi';
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                TextInput::make('name'),
+                TextInput::make('name')->label('Label disposisi'),
             ]);
     }
 
@@ -40,7 +36,7 @@ class UserCategoriesResource extends AdminResource
     {
         return $table
             ->columns([
-                TextColumn::make('name'),
+                //
             ])
             ->filters([
                 //
@@ -58,16 +54,16 @@ class UserCategoriesResource extends AdminResource
     public static function getRelations(): array
     {
         return [
-            UsersRelationManager::class, 
+            //
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListUserCategories::route('/'),
-            'create' => Pages\CreateUserCategories::route('/create'),
-            'edit' => Pages\EditUserCategories::route('/{record}/edit'),
+            'index' => Pages\ListDispositions::route('/'),
+            'create' => Pages\CreateDisposition::route('/create'),
+            'edit' => Pages\EditDisposition::route('/{record}/edit'),
         ];
     }
 }
