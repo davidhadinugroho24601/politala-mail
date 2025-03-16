@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MailCodesResource\Pages;
 use App\Filament\Resources\MailCodesResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use App\Models\MailCodeDetail;
 
 class EditMailCodes extends EditRecord
 {
@@ -25,6 +26,15 @@ class EditMailCodes extends EditRecord
                 ->update(['status' => 'disabled']);
         }
     
+        $mailCodeId = $this->record->id; // Fixed undefined $record
+        $mergedText = MailCodeDetail::where('code_id', $mailCodeId)
+            ->pluck('text')
+            ->map(fn($text) => trim(preg_replace('/\s+/', ' ', $text))) // Normalize whitespace
+            ->implode('/');
+        $data['code'] = $mergedText; // Assign to $data['code'] instead of $this->record->code
+        // dd($data['code']);
+
+         
         return $data;
     }
     

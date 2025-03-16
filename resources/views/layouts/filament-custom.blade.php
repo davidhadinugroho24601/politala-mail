@@ -50,19 +50,21 @@
         }
     </style>
 
-    <script>
-        const theme = localStorage.getItem('theme') ?? 'system';
-        if (
-            theme === 'dark' ||
-            (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        ) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
+<script>
+    const theme = localStorage.getItem('theme') ?? 'system';
+
+    if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+</script>
+
 
     @livewireStyles
 </head>
-<body class="fi-body fi-panel-admin min-h-screen bg-gray-50 font-normal text-gray-950 antialiased dark:bg-gray-950 dark:text-white">
+<body class="fi-body fi-panel-admin min-h-screen bg-white font-normal text-gray-950 antialiased dark:bg-gray-950 dark:text-white">
+
     @yield('content')
 
     <!-- Scripts -->

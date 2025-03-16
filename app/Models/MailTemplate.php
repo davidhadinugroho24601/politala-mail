@@ -21,4 +21,8 @@ class MailTemplate extends Model implements HasMedia
         'google_doc_link',
     ];
 
+    public function templateAvailability(){
+     return $this->hasMany(TemplateAvailability::class, 'template_id');
+    }
+
 }

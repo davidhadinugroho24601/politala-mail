@@ -20,6 +20,12 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Middleware\RedirectFilamentToBreezeLogin;
 use App\Http\Middleware\HideAdminNavigation;
+use Filament\Navigation\MenuItem;
+use Filament\Pages\Auth\EditProfile;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
+
+
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -28,7 +34,9 @@ class AdminPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('admin')
+            ->brandName('POLITALA Mail')
             ->path('admin')
+            
             ->login(false)
             ->colors([
                 'primary' => Color::Amber,
@@ -36,7 +44,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                // Pages\Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
@@ -46,7 +54,23 @@ class AdminPanelProvider extends PanelProvider
             ->middleware($this->getAdminMiddleware())
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->profile(EditProfile::class, isSimple: false)
+            ->navigationItems([
+                NavigationItem::make()->label('Daftar Role')
+                ,
+            ])
+            ->navigationGroups([
+                NavigationGroup::make()
+                     ->label('Kirim Surat')
+                    //  ->collapsible(false)
+                     ,
+                NavigationGroup::make()
+                    ->label('Surat Masuk')
+                    // ->collapsible(false)
+                    ,
             ]);
+
     }
 
     private function getAdminMiddleware(): array
@@ -66,7 +90,7 @@ class AdminPanelProvider extends PanelProvider
         ];
 
         // Apply CheckGroupIDSession to ALL `/admin/*` EXCEPT `/admin/your-roles*`
-        if (request()->is('admin/*') && !request()->is('admin/your-roles*') && !request()->is('admin/login')) {
+        if ((request()->is('admin/*' ) || request()->is('admin' ) )&& !request()->is('admin/your-roles*') && !request()->is('admin/login')) {
             $middleware[] = CheckGroupIDSession::class;
         }
 

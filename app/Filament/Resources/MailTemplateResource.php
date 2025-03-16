@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\MailTemplateResource\Pages;
 use App\Filament\Resources\MailTemplateResource\RelationManagers;
 use App\Models\MailTemplate;
+use App\Models\Division;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -17,12 +18,14 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\View;
+use Filament\Forms\Components\Select;
+use App\Filament\Resources\MailTemplateResource\RelationManagers\TemplateAvailabilityRelationManager;
 
 class MailTemplateResource extends AdminResource
 {
     protected static ?string $model = MailTemplate::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?string $navigationLabel = 'Template';
 
@@ -41,7 +44,9 @@ class MailTemplateResource extends AdminResource
                 ->disabled()
                 ->hidden(fn (string $context): bool => $context !== 'edit')
                 ->extraAttributes(['style' => 'width: 100%; height: 600px; border: none;']),
+                
 
+                
                 // RichEditor::make('template')
                 // ->label('Mail Content')
                 // ->columnSpan('full')
@@ -105,7 +110,7 @@ class MailTemplateResource extends AdminResource
     public static function getRelations(): array
     {
         return [
-            //
+            TemplateAvailabilityRelationManager::class,
         ];
     }
 

@@ -20,7 +20,7 @@ class DivisionResource extends AdminResource
 {
     protected static ?string $model = Division::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-building-office';
 
     protected static ?string $navigationLabel = 'Divisi';
 
@@ -32,10 +32,11 @@ class DivisionResource extends AdminResource
         return $form
             ->schema([
                 TextInput::make('name')->required(),
-                TextColumn::make('acronym')
-                ->label('Akronim')
-                ->sortable()
-                ->searchable(),
+                TextInput::make('acronym')
+                ->label('Akronim')->required()
+                ,TextInput::make('division_code')
+                ->label('Kode Divisi')->required()
+                ,
             ]);
     }
 
@@ -52,6 +53,11 @@ class DivisionResource extends AdminResource
                     ->translateLabel()
                     ->sortable()
                     ->searchable(),
+                TextColumn::make('division_code')
+                    ->label('Kode Divisi')
+                        ->translateLabel()
+                        ->sortable()
+                        ->searchable(),
             ])
             ->filters([
                 //

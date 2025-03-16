@@ -9,7 +9,14 @@ use App\Models\ApprovalChain;
 use App\Models\MailCode;
 use App\Models\Division;
 use App\Models\Group;
-
+use Google\Client as Google_Client;
+use Google\Service\Docs as Google_Service_Docs;
+use Google\Service\Docs\Request as Google_Service_Docs_Request;
+use Google\Service\Docs\BatchUpdateDocumentRequest as Google_Service_Docs_BatchUpdateDocumentRequest;
+use Google\Service\Drive as Google_Service_Drive;
+use Google\Service\Drive\DriveFile as Google_Service_Drive_DriveFile;
+use Google\Service\Drive\Permission as Google_Service_Drive_Permission;
+use Illuminate\Support\Facades\Storage;
 class EditSentMails extends EditRecord
 {
     protected static string $resource = SentMailsResource::class;
@@ -21,15 +28,55 @@ class EditSentMails extends EditRecord
         ];
     }
 
-    // protected function beforeSave(): void
-    // {
-       
-    // }
-  
+    function saveGoogleDocAsPdf($googleDocUrl) {
+        $docId = $this->extractGoogleDocId($googleDocUrl);
+        if (!$docId) {
+            return 'Error: Invalid Google Doc URL';
+        }
+    
+        $client = new Google_Client();
+        $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
+        $client->addScope(Google_Service_Drive::DRIVE);
+    
+        $driveService = new Google_Service_Drive($client);
+    
+        try {
+            // Export Google Doc as PDF
+            $response = $driveService->files->export($docId, 'application/pdf', ['alt' => 'media']);
+    
+            // Generate unique filename
+            $fileName = 'google_docs/' . uniqid('document_', true) . '.pdf';
+            $filePath = storage_path('app/public/' . $fileName);
+    
+            // Save PDF to storage
+            Storage::disk('public')->put($fileName, $response->getBody());
+            // dd
+            return 'storage/' . $fileName;
+        } catch (\Exception $e) {
+            return 'Error: ' . $e->getMessage();
+        }
+    }
+    // Extract Google Doc ID from URL
+    function extractGoogleDocId($url) {
+        preg_match('/document\/d\/([a-zA-Z0-9_-]+)/', $url, $matches);
+        return $matches[1] ?? null;
+    }
 
     protected function mutateFormDataBeforeSave(array $data): array
 {
+
+    // $docLink = $this->record->google_doc_link;
+    
+    // if (!empty($docLink)) {
+    //     $pdfPath = $this->saveGoogleDocAsPdf($docLink);
+    //     // Save the path if the conversion was successful
+    //     if (!str_starts_with($pdfPath, 'Error:')) {
+    //         $this->record->pdf_path = $pdfPath;
+    //     }
+    // }
+    
     if (isset($data['content'])) {
+        // dd('tes');
         // Load the HTML content into DOMDocument
         $dom = new \DOMDocument();
         @$dom->loadHTML($data['content'], LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);

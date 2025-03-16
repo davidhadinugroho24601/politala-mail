@@ -26,7 +26,7 @@ class UserResource extends AdminResource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-users';
  
    
     public static function form(Form $form): Form
@@ -37,7 +37,7 @@ class UserResource extends AdminResource
 
                 TextInput::make('email'),
 
-                TextInput::make('password')->password(),
+                // TextInput::make('password')->password(),
 
                 Select::make('role')
                 ->options([
@@ -53,14 +53,14 @@ class UserResource extends AdminResource
                 ->searchable()
                 ->required()
                 ,
-                Select::make('group_id')
-                ->label('Jabatan')
-                ->options(
-                    Group::pluck('name', 'id') // Filter options by session groupID
-                )
-                ->searchable()
-                ->required()
-                , 
+                // Select::make('group_id')
+                // ->label('Jabatan')
+                // ->options(
+                //     Group::pluck('name', 'id') // Filter options by session groupID
+                // )
+                // ->searchable()
+                // ->required()
+                // , 
                 
             ]);
     }

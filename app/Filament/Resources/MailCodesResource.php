@@ -23,7 +23,7 @@ class MailCodesResource extends AdminResource
 {
     protected static ?string $model = MailCode::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     protected static ?string $navigationLabel = 'Kode surat';
 
@@ -35,8 +35,7 @@ class MailCodesResource extends AdminResource
         return $form
             ->schema([
                 TextInput::make('code_name')->label('Label Kode'), 
-                TextInput::make('section_qty')->label('Partisi')->numeric()->minValue(1)
-                ->maxValue(10)->required(), 
+                
                 Select::make('status')
                 ->label('Status Kode')
                 ->options(
@@ -48,25 +47,25 @@ class MailCodesResource extends AdminResource
                 ->required(),
                 
                 TextInput::make('code')
-                ->label('Kode Surat')
-                ->afterStateHydrated(function ($component, $state, $record) {
-                    if ($record) {
-                        $mailCodeId = $record->id;
-                        $mergedText = MailCodeDetail::where('code_id', $mailCodeId)
-                            ->pluck('text')
-                            ->map(fn($text) => trim(preg_replace('/\s+/', ' ', $text)))
-                            ->implode('/');
-                        $component->state($mergedText);
-                    }
-                })
-                ->beforeStateDehydrated(function ($state, $record, $set) {
-                    if ($record) {
-                        $record->code = $state;
-                    } else {
-                        $set('code', $state);
-                    }
-                })
-                ->disabled(),
+                ->label('Kode Surat')->disabled(),
+                // ->afterStateHydrated(function ($component, $state, $record) {
+                //     if ($record) {
+                //         $mailCodeId = $record->id;
+                //         $mergedText = MailCodeDetail::where('code_id', $mailCodeId)
+                //             ->pluck('text')
+                //             ->map(fn($text) => trim(preg_replace('/\s+/', ' ', $text)))
+                //             ->implode('/');
+                //         $component->state($mergedText);
+                //     }
+                // })
+                // ->beforeStateDehydrated(function ($state, $record, $set) {
+                //     if ($record) {
+                //         $record->code = $state;
+                //     } else {
+                //         $set('code', $state);
+                //     }
+                // })
+                // ->disabled(),
             
             
             ]);

@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Str;
+
 class CodeDetailsRelationManager extends RelationManager
 {
     protected static string $relationship = 'codeDetails';
@@ -23,7 +25,9 @@ class CodeDetailsRelationManager extends RelationManager
                 ->options([
                     'text' => 'Text',
                     'increment' => 'Surat Terbit',
-                    'division' => 'Divisi',
+                    'division_acronym' => 'Akronim Divisi',
+                    'division_name' => 'Nama Divisi',
+                    'division_code' => 'Kode Divisi',
                     'date' => 'Tanggal',
                     'month' => 'Bulan',
                     'year' => 'Tahun',
@@ -50,7 +54,8 @@ class CodeDetailsRelationManager extends RelationManager
             ->recordTitleAttribute('text')
             ->columns([
                 Tables\Columns\TextColumn::make('text')->placeholder('Data belum tersedia'),
-                Tables\Columns\TextColumn::make('type'),
+                Tables\Columns\TextColumn::make('type')
+                ->formatStateUsing(fn (string $state) => Str::replace('_', ' ', $state)),
             ])
             ->filters([
                 //
@@ -75,10 +80,15 @@ class CodeDetailsRelationManager extends RelationManager
                             $data['text'] = '{tahun}';
                             break;
 
-                        case 'division':
-                                $data['text'] = '{akronim divisi}';
-                                break;
-    
+                        case 'division_acronym':
+                            $data['text'] = '{akronim divisi}';
+                            break;
+                        case 'division_name':
+                            $data['text'] = '{nama divisi}';
+                            break;
+                        case 'division_code':
+                            $data['text'] = '{kode divisi}';
+                            break;
                         default:
                             // Optional: handle cases where 'type' doesn't match any case
                             break;

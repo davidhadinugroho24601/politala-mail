@@ -47,6 +47,7 @@ class CreateMailTemplate extends CreateRecord
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
 {
 
+
     $data['google_doc_link'] = Self::generateGoogleDoc();
 
     if (isset($data['template'])) {

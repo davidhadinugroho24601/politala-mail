@@ -19,6 +19,7 @@ class EditMailTemplate extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
 {
+  
     if (isset($data['template'])) {
         // Load the HTML content into DOMDocument
         $dom = new \DOMDocument();

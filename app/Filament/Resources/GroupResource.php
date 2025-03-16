@@ -21,7 +21,7 @@ class GroupResource extends AdminResource
 {
     protected static ?string $model = Group::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
     protected static ?string $navigationLabel = 'Jabatan';
 
@@ -34,14 +34,13 @@ class GroupResource extends AdminResource
         return $form
             ->schema([
                 TextInput::make('name')->required(),
-                TextInput::make('acronym')->label('Akronim')->required(),
                 TextInput::make('description')->label('Deskripsi')->required(),
                 Select::make('parent_id')
-                    ->label('Parent Group')
+                    ->label('Atasan')
                     ->options(Group::all()->pluck('name', 'id')),
                 Select::make('division_id')
                     ->label('Divisi')
-                    ->options(Division::all()->pluck('name', 'id')),
+                    ->options(Division::all()->pluck('name', 'id'))->required(),
              
             ]);
     }
@@ -58,7 +57,7 @@ class GroupResource extends AdminResource
             
                     
                     SelectColumn::make('parent_id')
-                    ->label('Parent Group')
+                    ->label('Atasan')
                     ->options(Group::all()->pluck('name', 'id')),
 
                        

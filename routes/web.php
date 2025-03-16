@@ -7,13 +7,13 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin');
 });
 
 Route::get('/set-group-id/{groupID}', [GroupController::class, 'setGroupID'])->name('set.group.id');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    return redirect('/admin');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

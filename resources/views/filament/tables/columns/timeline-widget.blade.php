@@ -64,6 +64,7 @@
 
 <div class="container">
   <ul class="timeline">
+
     @foreach ($getRecord()->approvals ?? [] as $approval)
       <li style="color: {{ $approval['color'] ?? '#3498db' }};">
         <span class="label">{{ $approval['name'] }}</span>

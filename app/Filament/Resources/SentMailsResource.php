@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\Group;
 use App\Models\User;
+use App\Models\Disposition;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\RichEditor;
 
@@ -33,6 +34,8 @@ use App\Filament\Resources\SentMailsResource\RelationManagers\AttachmentMailRela
 use Filament\Forms\Components\View;
 use Filament\Forms\Components\Textarea;
 use Illuminate\Support\HtmlString;
+use App\Services\MailService;
+use Filament\Navigation\NavigationItem;
 
 
 
@@ -42,10 +45,54 @@ class SentMailsResource extends BaseResource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     
-    
-    
-   
-    
+
+            public static function getNavigationItems(): array
+            {
+                $navigationGroup = 'Kirim Surat';
+
+                $statuses = Mail::select('status')->distinct()->pluck('status')->toArray();
+                $navigationItems = [
+                    NavigationItem::make('Semua surat')
+                        ->url(static::getUrl()) // No query parameters needed for "All Mails"
+                        ->icon('heroicon-o-inbox')
+                        ->group($navigationGroup)
+                        ,
+                ];
+            
+                foreach ($statuses as $status) {
+                    $navigationItems[] = NavigationItem::make(ucwords($status))
+                        ->url(route('filament.admin.resources.sent-mails.index', ['status' => $status])) // Use `route()`
+                        ->icon(static::getStatusIcon($status))
+                        ->group($navigationGroup)
+                        ;
+                }
+            
+                return $navigationItems;
+            }
+            
+            public static function canCreate(): bool
+            {
+                // Ambil status surat terbaru dari database
+                $latestMailStatus = Mail::latest()->value('status');
+              
+                // Jika status terbaru adalah "Submitted", return false
+                if (request('status') === 'Submitted') {
+                    return false;
+                }
+            
+                return true;
+            }
+            
+            protected static function getStatusIcon(string $status): string
+            {
+                return match ($status) {
+                    'Draft' => 'heroicon-o-pencil', // Icon for drafts
+                    'Submitted' => 'heroicon-o-paper-airplane', // Icon for submitted mails
+                    default => 'heroicon-o-document-text', // Fallback icon
+                };
+            }
+            
+        
 
     public static function form(Form $form): Form
     {
@@ -59,38 +106,75 @@ class SentMailsResource extends BaseResource
             ->columnSpanFull()
             ,
                 ]),
+            Select::make('is_staged')
+                ->required()
+                ->live() // Makes it update the form instantly
+                ->label('Tipe Surat')
+                    ->options([
+                        'yes' => 'Berjenjang',
+                        'no' => 'Langsung',
+                    ])                
+                    ->disabled(fn ($record) => $record !== null),
+
             // Final Target ID - Dropdown populated with user names
-                Select::make('final_id')
-                ->label('Penerima')
-                ->options(Group::pluck('name', 'id'))
-                ->searchable()
-                ->required() 
-                ->disabled(fn ($record) => $record !== null),
-
-
-                TextInput::make('subject')
-            ->required()
-            ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
-                            
-                Select::make('is_staged')
-            ->required()
-            ->label('Tipe Surat')
-                ->options([
-                    'yes' => 'Berjenjang',
-                    'no' => 'Langsung',
-                ])                
-                ->disabled(fn ($record) => $record !== null),
-
-
-            Forms\Components\Select::make('template_id')
-            ->label('Template')
-            ->options(
-                MailTemplate::pluck('name', 'id') // Filter options by session groupID
-            )
+            Select::make('final_id')
+            ->label('Jabatan Penerima')
+            ->options(Group::pluck('name', 'id'))
             ->searchable()
             ->required()
+            ->live() // Makes it update the form instantly
             ->disabled(fn ($record) => $record !== null),
+        
+            Select::make('direct_id')
+                ->label('Penerima')
+                ->options(fn (callable $get, callable $set) => 
+                    ($finalId = $get('final_id')) 
+                        ? \App\Models\User::whereHas('groupDetailsView', fn ($query) => $query->where('group_id', $finalId))
+                            ->pluck('name', 'id')
+                        : []
+                )
+                ->searchable()
+                ->required()
+                ->hidden(fn ($get) => !$get('final_id') || $get('is_staged') !== 'no') // Disable if no final_id or is_staged == 'yes',
+                ->disabled(fn ($record) => $record !== null),
 
+        
+
+                TextInput::make('subject')
+                ->required()
+                ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
+                                
+            
+
+
+                Forms\Components\Select::make('template_id')
+                ->label('Template')
+                ->options(function () {
+                    $groupId = session('groupID'); // Get the logged-in user's group ID from session
+                    $divisionId = \App\Models\Group::where('id', $groupId)->value('division_id'); // Get division ID
+            
+                    if (!$divisionId) {
+                        return []; // No division found, return empty options
+                    }
+            
+                    return MailTemplate::whereHas('templateAvailability', function ($query) use ($divisionId) {
+                        $query->where('division_id', $divisionId); // Filter by division
+                    })->pluck('name', 'id');
+                })
+                ->searchable()
+                ->required()
+                ->live()
+                ->disabled(fn ($record) => $record !== null),
+            
+
+                Select::make('disposition_id') 
+                ->label('Disposisi')
+                ->options(Disposition::pluck('name', 'id'))
+                ->searchable()
+                ->required()
+                ->hidden(fn ($get) => \App\Models\MailTemplate::where('id', $get('template_id'))->value('name') !== 'Disposisi'),
+            
+            
             
 
             View::make('components.google-docs-editor')
@@ -100,41 +184,8 @@ class SentMailsResource extends BaseResource
             ->hidden(fn (string $context): bool => $context !== 'edit')
             ->extraAttributes(['style' => 'width: 100%; height: 600px; border: none;']),
 
-
-
-
-        //     RichEditor::make('content')
-        //     ->label('Mail Content')
-        //     ->columnSpan('full')
-        //     ->extraAttributes(['style' => 'word-wrap: break-word;']) 
-        //     ->toolbarButtons([
-        //         'bold', 'italic', 'underline', 'strike',
-        //         'bulletList', 'orderedList', 'blockquote', 'codeBlock',
-        //         'alignLeft', 'alignCenter', 'alignRight', 'alignJustify', 
-        //         'link', 
-        //     ])
-        //     ->hidden(fn (string $context): bool => $context !== 'edit')
-        //     ->disabled(fn ($record) => $record && $record->status !== 'Draft')
-        //     ->afterStateUpdated(function ($state, $record) {
-        //         if (!$record) {
-        //             return;
-        //         }
-        
-        //         // Extract image URLs from the content
-        //         preg_match_all('/<img[^>]+src="([^">]+)"/', $state, $matches);
-        
-        //         foreach ($matches[1] as $url) {
-        //             $record->addMediaFromUrl($url)
-        //                 ->usingFileName('attachments/' . uniqid() . '.jpg') // Customize the path and filename
-        //                 ->toMediaCollection('attachments');
-        //         }
-        //     })
-        //    ,
-        
-            
-
             Forms\Components\Select::make('group_id')
-            ->label('Group')
+            ->label('Pengirim')
             ->options(
                 Group::where('id', session('groupID'))->pluck('name', 'id') // Filter options by session groupID
             )
@@ -143,12 +194,6 @@ class SentMailsResource extends BaseResource
             ->disabled()
             ->default(session('groupID'))
             ->dehydrated(),
-            
-          
-        
-        
-        
-        
 
                 ]);
 
@@ -214,40 +259,16 @@ public static function table(Table $table): Table
                     ? 'View' 
                     : 'Edit'),
                     
-                Action::make('sendMail') // The action's name
-                ->label('Send Mail') // Button label
-                ->icon('heroicon-o-paper-airplane') // Optional: Add an icon
-                ->action(function ($record) { // Define the logic when the action is triggered
-                    // Your custom logic here
-                    // Example: Mark the mail as "Sent"
-                    $record->update(['status' => 'Submitted']);
-                    if(!$record->released){
-                        $record->update(['released' => true]);
-                        $firstReport = Report::first();
 
-                        if ($firstReport) {
-                            $firstReport->increment('created_mails');
-                        } else {
-                            $firstReport = Report::create(['created_mails' => 1]);
-                        }
-                        
-                    }
-                    
-                   
-
-                // Reset all "denied" approvals back to "waiting"
-                ApprovalChain::where('mail_id', $record->id)
-                    ->where('status', 'denied')
-                    ->update(['status' => 'waiting']);
-
-                    Notification::make()
-                        ->title('Mail sent successfully!')
-                        ->success()
-                        ->send();
-                })
-                ->requiresConfirmation() 
-                ->color('success')
-                ->hidden(fn ($record) => $record->status === 'Submitted'), // Optional: Define the button color
+                    Action::make('sendMail')
+                        ->label('Send Mail')
+                        ->icon('heroicon-o-paper-airplane')
+                        ->action(function ($record, MailService $mailService) {
+                            $mailService->sendMail($record);
+                        })
+                        ->requiresConfirmation()
+                        ->color('success')
+                        ->hidden(fn ($record) => $record->status === 'Submitted'),
 
 
 
@@ -303,9 +324,18 @@ public static function table(Table $table): Table
         ];
     }
     
-    // Use getTableQuery to filter data based on session
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('group_id', session('groupID'))->where('writer_id', auth()->id());
+        
+        $query = parent::getEloquentQuery()
+            ->where('group_id', session('groupID'))
+            ->where('writer_id', auth()->id());
+    
+        if ($status = request('status')) {
+            $query->where('status', $status);
+        }
+    
+        return $query;
     }
+    
 }

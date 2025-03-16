@@ -16,7 +16,8 @@ class MailCode extends Model
         'status',
         'section_qty',
        'created_at',
-       'updated_at',
+         'code',
+         'updated_at',
 
     ];
 

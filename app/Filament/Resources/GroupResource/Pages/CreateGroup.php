@@ -12,8 +12,5 @@ class CreateGroup extends CreateRecord
 
    
 
-    protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
-    {
-        
-    }
+    
 }

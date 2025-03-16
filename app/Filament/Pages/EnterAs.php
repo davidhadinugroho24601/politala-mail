@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class EnterAs extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-identification';
     protected static ?string $title = 'Daftar Role';
     protected static ?string $navigationLabel = 'Daftar Role';
     protected static ?string $slug = 'your-roles';

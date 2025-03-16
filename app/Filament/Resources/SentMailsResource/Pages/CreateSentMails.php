@@ -22,116 +22,60 @@ use Illuminate\Support\Facades\Storage;
 class CreateSentMails extends CreateRecord
 {
     protected static string $resource = SentMailsResource::class;
-    function saveGoogleDocAsPdf($googleDocUrl) {
-        $docId = $this->extractGoogleDocId($googleDocUrl);
-        if (!$docId) {
-            return 'Error: Invalid Google Doc URL';
-        }
-    
-        $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
-        $client->addScope(Google_Service_Drive::DRIVE);
-    
-        $driveService = new Google_Service_Drive($client);
-    
+
+    public static function copyOrGenerateGoogleDoc(?string $sourceDocId = null): string
+{
+    $client = new Google_Client();
+    $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
+    $client->addScope(Google_Service_Docs::DOCUMENTS);
+    $client->addScope(Google_Service_Drive::DRIVE);
+
+    $driveService = new Google_Service_Drive($client);
+
+    if ($sourceDocId) {
+        // 🔹 Jika ada sourceDocId, salin dokumen
         try {
-            // Export Google Doc as PDF
-            $response = $driveService->files->export($docId, 'application/pdf', ['alt' => 'media']);
-    
-            // Generate unique filename
-            $fileName = 'google_docs/' . uniqid('document_', true) . '.pdf';
-            $filePath = storage_path('app/public/' . $fileName);
-    
-            // Save PDF to storage
-            Storage::disk('public')->put($fileName, $response->getBody());
-            // dd
-            return 'storage/' . $fileName;
+            $copy = new Google_Service_Drive_DriveFile([
+                'name' => 'Copy of Document - ' . uniqid(),
+            ]);
+            $copiedFile = $driveService->files->copy($sourceDocId, $copy);
+            $fileId = $copiedFile->id;
         } catch (\Exception $e) {
             return 'Error: ' . $e->getMessage();
         }
-    }
-
-
-    
-    function copyGoogleDocContent($sourceDocId, $targetDocId) {
-        $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
-        $client->addScope([Google_Service_Docs::DOCUMENTS, Google_Service_Drive::DRIVE]);
-    
-        $docsService = new Google_Service_Docs($client);
-    
-        // Get source document content
-        $sourceDoc = $docsService->documents->get($sourceDocId);
-        $content = '';
-    
-        foreach ($sourceDoc->getBody()->getContent() as $element) {
-            $paragraph = $element->getParagraph();
-            if (null !== $paragraph) {
-                foreach ($paragraph->getElements() as $textRun) {
-                    $textContent = $textRun->getTextRun();
-                    if (null !== $textContent) {
-                        $content .= $textContent->getContent();
-                    }
-                }
-            }
-            $content .= "\n";
-        }
-    
-        // Get the actual document length
-        $targetDoc = $docsService->documents->get($targetDocId);
-        $endIndex = $targetDoc->getBody()->getContent();
-        $docLength = count($endIndex) > 0 ? end($endIndex)->getEndIndex() : 1; // Get last index
-    
-        // Clear target document and insert new content
-        $requests = [
-            // new Google_Service_Docs_Request(['deleteContentRange' => ['range' => ['startIndex' => 1, 'endIndex' => $docLength]]]), // Corrected endIndex
-            new Google_Service_Docs_Request(['insertText' => ['location' => ['index' => 1], 'text' => $content]])
-        ];
-    
-        $batchUpdateRequest = new Google_Service_Docs_BatchUpdateDocumentRequest(['requests' => $requests]);
-        $docsService->documents->batchUpdate($targetDocId, $batchUpdateRequest);
-    }
-    
-    // Extract Google Doc ID from URL
-function extractGoogleDocId($url) {
-    preg_match('/document\/d\/([a-zA-Z0-9_-]+)/', $url, $matches);
-    return $matches[1] ?? null;
-}
-
-    
-    
-    
-    public static function generateGoogleDoc(): string
-    {
-        
-        $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
-        $client->addScope(Google_Service_Docs::DOCUMENTS);
-        $client->addScope(Google_Service_Drive::DRIVE_FILE);
-        $client->addScope(Google_Service_Drive::DRIVE);
-    
-        $service = new Google_Service_Docs($client);
-        $driveService = new Google_Service_Drive($client);
-    
-        // Create a new Google Doc
+    } else {
+        // 🔹 Jika tidak ada sourceDocId, buat dokumen baru
         $fileMetadata = new Google_Service_Drive_DriveFile([
             'name' => 'New Document ' . now()->format('Y-m-d H:i:s'),
             'mimeType' => 'application/vnd.google-apps.document'
         ]);
         $file = $driveService->files->create($fileMetadata, ['fields' => 'id']);
-    
         $fileId = $file->id;
-    
-        // 🔹 Set file permissions: Anyone can edit
+    }
+
+    // 🔹 Setel izin agar semua orang dapat mengakses dokumen
+    try {
         $permission = new Google_Service_Drive_Permission([
             'type' => 'anyone',
-            'role' => 'writer',
+            'role' => 'writer', // Bisa diganti 'reader' jika hanya ingin bisa dilihat
         ]);
         $driveService->permissions->create($fileId, $permission);
-    
-        // Return the embedded URL
-        return "https://docs.google.com/document/d/{$fileId}/edit?embedded=true";
+    } catch (\Exception $e) {
+        return 'Error setting permission: ' . $e->getMessage();
     }
+
+    // 🔹 Kembalikan URL dengan `embedded=true`
+    return "https://docs.google.com/document/d/{$fileId}/edit?embedded=true";
+}
+
+
+
+
+           // Extract Google Doc ID from URL
+           function extractGoogleDocId($url) {
+            preg_match('/document\/d\/([a-zA-Z0-9_-]+)/', $url, $matches);
+            return $matches[1] ?? null;
+        }
     /**
      * Find the shortest path between two group IDs.
      */
@@ -200,27 +144,13 @@ function extractGoogleDocId($url) {
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
     {
         $this->validateTargetConnection(session('groupID'), $data['final_id'], $data['is_staged']);
-        $data['google_doc_link'] = Self::generateGoogleDoc();
         $data['writer_id'] = auth()->id();
         $data['status'] = 'Draft';
 
-       // Get source and target Google Docs from database
-        $sourceDocId = $this->extractGoogleDocId(MailTemplate::find($data['template_id'])?->google_doc_link ?? '');
-        $targetDocId = $this->extractGoogleDocId($data['google_doc_link'] ?? '');
-
-        if ($sourceDocId && $targetDocId) {
-            $this->copyGoogleDocContent($sourceDocId, $targetDocId);
-        }
-
-        if (!empty($data['google_doc_link'])) {
-            $pdfPath = $this->saveGoogleDocAsPdf($data['google_doc_link']);
-            
-            // Save the path if the conversion was successful
-            if (!str_starts_with($pdfPath, 'Error:')) {
-                $data['pdf_path'] = $pdfPath;
-            }
-        }
-        
+        $data['google_doc_link'] = Self::copyOrGenerateGoogleDoc(
+            $this->extractGoogleDocId(MailTemplate::find($data['template_id'])?->google_doc_link ?? '')
+        );
+       
 
         $record = $this->getModel()::create($data);
        

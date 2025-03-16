@@ -21,7 +21,7 @@ class UserCategoriesResource extends AdminResource
 {
     protected static ?string $model = UserCategory::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-bars-3';
 
     protected static ?string $navigationLabel = 'Golongan';
 

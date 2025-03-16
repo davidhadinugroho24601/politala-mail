@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ReceivedMailsResource\Pages;
+use App\Filament\Resources\ReceivedMailsResource\RelationManagers\AttachmentMailRelationManager;
 use App\Filament\Resources\ReceivedMailsResource\RelationManagers;
 use App\Models\Mail;
 use App\Models\Group;
@@ -23,12 +24,22 @@ use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Illuminate\Support\Facades\Auth;
+use Filament\Resources\Pages\ListRecords;
 // use Filament\Forms\Components\Actions;
 use Filament\Support\Facades\Filament;
 use Filament\Forms\Components\Actions;
 // use Filament\Forms\Components\Actions\Action;
-class ReceivedMailsResource extends BaseResource
+use Filament\Forms\Components\View;
+use App\Services\MailService;
+use Filament\Navigation\NavigationItem;
+use Filament\Tables\Actions\BulkAction;
+// use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
+use ZipArchive;
+class ReceivedMailsResource extends Resource
 {
     protected static ?string $model = Mail::class;
 
@@ -37,125 +48,118 @@ class ReceivedMailsResource extends BaseResource
     protected static ?string $navigationLabel = 'Inbox';
 
     protected static ?string $modelLabel = 'Inbox';
+    
+    protected static ?string $navigationGroup = 'Inbox';
+
+   
+    
+    public static function getNavigationItems(): array
+    {
+        // Get distinct template names
+        $templates = Mail::with('template')->get()->pluck('template.name')->unique()->filter();
+    
+        $navigationItems = [];
+        $navigationGroup = 'Surat Masuk';
+
+        // Default "All Mails" navigation
+        $navigationItems[] = NavigationItem::make()
+            ->label('Semua surat')
+            ->url(static::getUrl('index'))
+            ->icon('heroicon-o-inbox')
+            ->group($navigationGroup)
+            ;
+    
+        // Generate a navigation item for each template name
+        foreach ($templates as $templateName) {
+            
+            $navigationItems[] = NavigationItem::make()
+                ->label($templateName)
+                ->url(static::getUrl('index') . '?template=' . urlencode($templateName))
+                ->icon('heroicon-o-document-text')
+                ->group($navigationGroup);
+
+        }
+    
+        return $navigationItems;
+    }
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+    public static function getFormActions(): array
+{
+    return [];
+}
 
     protected static ?string $pluralModelLabel = 'Inbox';
+    
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                // TextInput::make('subject')->required(),
-
-               
-           
-    //             Actions::make([
-    //                 Actions\Action::make('debug')
-    // ->label('Debug ID')
-    // ->button()
-    // ->color('danger')
-    // ->action(function ($record) {
-    //     // Dump the entire route parameters
-    //     dd(request()->route()->parameters());
-    // })
-                // ]),
-                    // Approve Button
-                    // Actions\Action::make('approveMail')
-                    //     ->label('Approve')
-                    //     ->icon('heroicon-o-envelope')
-                    //     ->color('success')
-                    //     ->requiresConfirmation()
-                    //     ->action(function ($livewire, $data) {
-                    //         $record = $livewire->record; // Get the current record
-                    //         $groupID = session('groupID'); // Get the current group ID
-                    //         // dd($record->id);
-                    //         $currentApproval = ApprovalChain::where('mail_id', $record->id)
-                    //             ->where('group_id', $groupID)
-                    //             ->orderBy('id') // Ensure it's in order
-                    //             ->first();
+                Forms\Components\Section::make('Approval Timeline')
+                    ->schema([
+                        View::make('filament.tables.columns.timeline-widget')
+                            ->label(false)
+                            ->columnSpanFull(),
+                    ]),
+                Select::make('is_staged')
+                    ->required()
+                    ->live()
+                    ->label('Tipe Surat')
+                    ->options([
+                        'yes' => 'Berjenjang',
+                        'no' => 'Langsung',
+                    ])
+                    ->disabled(),
     
-                    //         if (!$currentApproval) {
-                    //             Notification::make()
-                    //                 ->title('Error')
-                    //                 ->danger()
-                    //                 ->body('Approval step not found.')
-                    //                 ->send();
-                    //             return;
-                    //         }
+                Select::make('final_id')
+                    ->label('Jabatan Penerima')
+                    ->options(Group::pluck('name', 'id'))
+                    ->searchable()
+                    ->required()
+                    ->live()
+                    ->disabled(),
     
-                    //         // Update the approval status for the current group
-                    //         $currentApproval->update(['status' => 'approved']);
+                Select::make('direct_id')
+                    ->label('Penerima')
+                    ->options(User::pluck('name', 'id'))
+                    ->searchable()
+                    ->required()
+                    ->hidden(fn ($get) => !$get('final_id') || $get('is_staged') !== 'no')
+                    ->disabled(),
     
-                    //         // Find the next approval step
-                    //         $nextApproval = ApprovalChain::where('mail_id', $record->id)
-                    //             ->where('id', '>', $currentApproval->id)
-                    //             ->orderBy('id')
-                    //             ->first();
+                TextInput::make('subject')
+                    ->required()
+                    ->disabled(),
     
-                    //         if ($nextApproval) {
-                    //             // Update target_id to the next approval step
-                    //             $record->update(['target_id' => $nextApproval->group_id]);
-                    //         } else {
-                    //             // If no next step, mark as finished
-                    //             ApprovalChain::where('mail_id', $record->id)
-                    //                 ->where('group_id', $groupID)
-                    //                 ->update(['status' => 'finished']);
-                    //         }
+                Forms\Components\Select::make('template_id')
+                    ->label('Template')
+                    ->options(MailTemplate::pluck('name', 'id'))
+                    ->searchable()
+                    ->required()
+                    ->disabled(),
     
-                    //         Notification::make()
-                    //             ->title('Approval processed successfully!')
-                    //             ->success()
-                    //             ->send();
-                    //     })
-                    //     // ->hidden(fn ($livewire) => ApprovalChain::where('mail_id', $livewire->record->id)
-                    //     //     ->where('group_id', session('groupID'))
-                    //     //     ->whereNot('status', 'waiting')
-                    //     //     ->exists()
-                    //     // )
-                    //     ,
+                View::make('components.google-docs-editor')
+                    ->label('Google Docs Editor')
+                    ->columnSpan('full')
+                    ->disabled()
+                    ->hidden(fn (string $context): bool => $context !== 'edit')
+                    ->extraAttributes(['style' => 'width: 100%; height: 600px; border: none;']),
     
-                    // // Decline Button with Note
-                    // Actions\Action::make('declineWithNote')
-                    //     ->label('Tolak')
-                    //     ->icon('heroicon-o-x-circle')
-                    //     ->color('danger')
-                    //     ->requiresConfirmation()
-                    //     ->form([
-                    //         Textarea::make('notes')
-                    //             ->label('Tambahkan Catatan')
-                    //             ->required(),
-                    //     ])
-                    //     ->action(function ($livewire, array $data) {
-                    //         $record = $livewire->record;
-    
-                    //         ApprovalChain::where('mail_id', $record->id)
-                    //             ->where('group_id', session('groupID'))
-                    //             ->update([
-                    //                 'status' => 'denied',
-                    //                 'notes' => $data['notes'],
-                    //             ]);
-    
-                    //         // Change mail status back to "Draft"
-                    //         $record->update([
-                    //             'status' => 'Draft',
-                    //             'notes' => $data['notes'],
-                    //         ]);
-    
-                    //         Notification::make()
-                    //             ->title('Mail declined with notes successfully! Status set to Draft.')
-                    //             ->success()
-                    //             ->send();
-                    //     })
-                    //     // ->hidden(fn ($livewire) => ApprovalChain::where('mail_id', $livewire->record->id)
-                    //     //     ->where('group_id', session('groupID'))
-                    //     //     ->whereNot('status', 'waiting')
-                    //     //     ->exists()
-                    //     // )
-                    //     ,
-                // ])
-
-                
-            ]) ;
-        
+                Forms\Components\Select::make('group_id')
+                    ->label('Pengirim')
+                    ->options(Group::pluck('name', 'id'))
+                    ->searchable()
+                    ->required()
+                    ->disabled()
+                    ->default(session('groupID'))
+                    ->dehydrated(),
+            ]);
     }
+    
+        
+    
 
   
     public static function table(Table $table): Table
@@ -211,11 +215,7 @@ class ReceivedMailsResource extends BaseResource
                         ? [/* Your editable form fields */] 
                         : [] // No form fields for "View" mode
                 )
-                ->color(fn ($record) => 
-                    ApprovalChain::where('mail_id', $record->id)
-                        ->where('group_id', session('groupID'))
-                        ->value('status') === 'waiting' ? 'primary' : 'secondary'
-                )
+                ->color('secondary')
                 ,
                 // Action::make('approveMail')
                 // ->label('Approve')
@@ -231,52 +231,11 @@ class ReceivedMailsResource extends BaseResource
                 // ->requiresConfirmation()
                 // ->action(fn ($record) => redirect(ReceivedMailsResource::getUrl('approveMail', ['record' => $record->id]))),
                 Action::make('approveMail')
-                ->label('Approve')
-                ->icon('heroicon-o-envelope')
-                ->requiresConfirmation()->action(fn ($record) => dd(Mail::find($record->id)->id))
-
-                ->action(function ($record) {
-                   
-                //   dd($record->id);
-                    $groupID = session('groupID'); // Get the current group ID
-                    
-                    $currentApproval = ApprovalChain::where('mail_id', $record->id)
-                    ->where('group_id', $groupID)->orderBy('id') // Ensure it's in order
-                    ->first();
-                    // Update the approval status for the current group
-            // dd($record->id);
-                    // Find the next approval step
-                    $nextApproval = ApprovalChain::where('mail_id', $record->id)
-                        ->where('id', '>', $currentApproval->id) // Get the next group
-                        ->orderBy('id') // Ensure it's in order
-                        ->first();
-            // dd($nextApproval);
-
-            $currentApproval ->update(['status' => 'approved']);
-                    if ($nextApproval) {
-                        // Update target_id to the next approval step
-                        $record->update(['target_id' => $nextApproval->group_id]);
-                    } else {
-                        // If no next step, mark as finished
-                        ApprovalChain::where('mail_id', $record->id)
-                            ->where('group_id', $groupID)
-                            ->update(['status' => 'finished']);
-                    }
-            // Notify all users in the group
-        $groupUsers = User::whereIn('id', function ($query) use ($record) {
-            $query->select('user_id')
-                ->from('group_details')
-                ->where('group_id', $record->group_id);
-        })->get();
-
-        foreach ($groupUsers as $user) {
-            $user->notify(new ApprovalProcessed('Approved', $record));
-        }
-
-                    Notification::make()
-                        ->title('Approval processed successfully!')
-                        ->success()
-                        ->send();
+                ->label('Setujui')
+                ->icon('heroicon-o-check-circle')
+                ->requiresConfirmation()
+                ->action(function ($record, MailService $mailService) {
+                    $mailService->approveMail($record);
                 })
                 ->color('success')
                 ->extraAttributes(fn ($record) => [
@@ -284,62 +243,59 @@ class ReceivedMailsResource extends BaseResource
                         ->where('group_id', session('groupID'))
                         ->whereNot('status', 'waiting')
                         ->exists() ? 'display: none;' : ''
-                ])
-               
-                ,
+                ]),
             
             Action::make('declineWithNote')
-            ->label('Tolak') // Button label
-            ->icon('heroicon-o-x-circle') // Optional: Add an icon
-            ->form([
-                Textarea::make('notes')
-                    ->label('Tambahkan Catatan')
-                    ->required(),
-            ])
-            // ->action(fn ($record) => dd($record->id))
-            ->action(function ($record, array $data) {
-                // Update the ApprovalChain with the user's notes and set status to 'denied'
-                ApprovalChain::where('mail_id', $record->id)
-                    ->where('group_id', session('groupID'))
-                    ->update([
-                        'status' => 'denied',
-                        'notes' => $data['notes'],
-                    ]);
-                    // dd($approval);
-                // Change mail status back to "Draft"
-                $record->update(['status' => 'Draft']);
-                $record->update(['notes' =>  $data['notes']]); 
-                // Send a success notification
-                Notification::make()
-                    ->title('Mail declined with notes successfully! Status set to Draft.')
-                    ->success()
-                    ->send();
-            })
-            ->requiresConfirmation()
-
-            ->color('danger')
-            
-            ->extraAttributes(fn ($record) => [
-                'style' => ApprovalChain::where('mail_id', $record->id)
-                    ->where('group_id', session('groupID'))
-                    ->whereNot('status', 'waiting')
-                    ->exists() ? 'display: none;' : ''
-            ]),
+                ->label('Revisi')
+                ->icon('heroicon-o-arrow-path')
+                ->form([
+                    Textarea::make('notes')
+                        ->label('Tambahkan Catatan')
+                        ->required(),
+                ])
+                ->action(function ($record, array $data, MailService $mailService) {
+                    $mailService->declineMailWithNote($record, $data);
+                })
+                ->requiresConfirmation()
+                ->color('warning')
+                ->extraAttributes(fn ($record) => [
+                    'style' => ApprovalChain::where('mail_id', $record->id)
+                        ->where('group_id', session('groupID'))
+                        ->whereNot('status', 'waiting')
+                        ->exists()  ? 'display: none;' : ''
+                ]),
+                // || !$record->isAncestor()
+            Action::make('decline')
+                ->label('Tolak')
+                ->icon('heroicon-o-x-circle')
+                ->action(function ($record, MailService $mailService) {
+                    $mailService->declineMail($record);
+                })
+                ->requiresConfirmation()
+                ->color('danger')
+                ->extraAttributes(fn ($record) => [
+                    'style' => ApprovalChain::where('mail_id', $record->id)
+                        ->where('group_id', session('groupID'))
+                        ->whereNot('status', 'waiting')
+                        ->exists()  ? 'display: none;' : ''
+                ]),
+                
             
 
             
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // BulkAction::make('Download PDFs')
+                // ->action(fn ($records) => static::bulkDownloadPdfs($records))
+                // ->requiresConfirmation()
+                // ->icon('heroicon-m-arrow-down-tray'),
             ]);
     }
-
+   
     public static function getRelations(): array
     {
         return [
-            //
+            AttachmentMailRelationManager::class,
         ];
     }
 
@@ -356,32 +312,48 @@ class ReceivedMailsResource extends BaseResource
     public static function getEloquentQuery(): Builder
     {
         $groupId = session('groupID');
-
+        if (session('groupID') !== 'admin') {
         // Return empty query if session does not have a group ID
         if (!$groupId) {
             return parent::getEloquentQuery()->whereRaw('1 = 0');
         }
-
+    
         $query = parent::getEloquentQuery()->withoutGlobalScopes();
-
+    
         // Get approved mail IDs for the current group
         $approvedMailIds = ApprovalChain::where('group_id', $groupId)
             ->where('status', 'Approved')
             ->pluck('mail_id')
-            ->toArray(); // Convert to an array for better performance
-
+            ->toArray();
+    
         $query->where(function ($q) use ($groupId, $approvedMailIds) {
             $q->where('target_id', $groupId)
-            ->where('status', 'Submitted');
-
+              ->where('status', 'Submitted');
+    
             if (!empty($approvedMailIds)) {
                 $q->orWhereIn('id', $approvedMailIds);
             }
         });
-
+    
+        // Apply filtering by template name if a parameter exists
+        if ($templateName = request()->query('template')) {
+            $query->whereHas('template', function ($q) use ($templateName) {
+                $q->where('name', $templateName);
+            });
+        }
+    }
+    else{
+        $query = parent::getEloquentQuery();
+         // Apply filtering by template name if a parameter exists
+         if ($templateName = request()->query('template')) {
+            $query->whereHas('template', function ($q) use ($templateName) {
+                $q->where('name', $templateName);
+            });
+        }
+    }
         return $query;
     }
-
+    
     
 
 }
