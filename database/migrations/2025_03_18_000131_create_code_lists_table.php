@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('mails', function (Blueprint $table) {
-            
-            $table->unsignedBigInteger('disposition_id')->nullable(); 
-
-
-            $table->foreign('disposition_id')
+        Schema::create('code_lists', function (Blueprint $table) {
+            $table->id();
+            $table->string('code');
+            $table->unsignedBigInteger('mail_id');
+            $table->foreign('mail_id')
             ->references('id')
-            ->on('dispositions')
-            ->onDelete('set null'); 
-
+            ->on('mails')
+            ->onDelete('cascade');  
+            $table->timestamps();
         });
     }
 
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('code_lists');
     }
 };

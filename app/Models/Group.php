@@ -22,6 +22,10 @@ class Group extends Model
     return $this->hasMany(GroupDetailsView::class);
     }
 
+    public function groupDetail()
+    {
+    return $this->hasMany(GroupDetail::class);
+    }
 
     public function children()
     {

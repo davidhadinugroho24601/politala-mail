@@ -2,6 +2,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\GroupResource\Pages;
+use App\Filament\Resources\GroupResource\RelationManagers\GroupDetailRelationManager;
 use App\Filament\Resources\GroupResource\RelationManagers\GroupDetailsViewRelationManager;
 use App\Models\Group;
 use Filament\Forms;
@@ -76,7 +77,8 @@ class GroupResource extends AdminResource
     public static function getRelations(): array
     {
         return [
-            GroupDetailsViewRelationManager::class, 
+            GroupDetailRelationManager::class, 
+            // GroupDetailsViewRelationManager::class, 
         ];
     }
     // public static function getRouteMiddleware(Panel $panel): array

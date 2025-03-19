@@ -19,7 +19,8 @@ use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\View;
 use Filament\Forms\Components\Select;
-use App\Filament\Resources\MailTemplateResource\RelationManagers\TemplateAvailabilityRelationManager;
+// use App\Filament\Resources\MailTemplateResource\RelationManagers\TemplateAvailabilityRelationManager;
+use App\Filament\Resources\MailTemplateResource\RelationManagers\MailPathRelationManager;
 
 class MailTemplateResource extends AdminResource
 {
@@ -110,7 +111,8 @@ class MailTemplateResource extends AdminResource
     public static function getRelations(): array
     {
         return [
-            TemplateAvailabilityRelationManager::class,
+            // TemplateAvailabilityRelationManager::class,
+            MailPathRelationManager::class,
         ];
     }
 

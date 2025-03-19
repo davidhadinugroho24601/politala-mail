@@ -25,4 +25,8 @@ class MailTemplate extends Model implements HasMedia
      return $this->hasMany(TemplateAvailability::class, 'template_id');
     }
 
+    public function mailPath(){
+        return $this->hasMany(MailPath::class, 'template_id');
+       }
+
 }
