@@ -17,6 +17,7 @@ class MailTemplate extends Model implements HasMedia
 
     protected $fillable = [
         'template',
+        'type',
         'name',
         'google_doc_link',
     ];

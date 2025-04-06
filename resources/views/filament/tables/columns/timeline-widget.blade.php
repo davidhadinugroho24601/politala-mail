@@ -68,6 +68,8 @@
     @foreach ($getRecord()->approvals ?? [] as $approval)
       <li style="color: {{ $approval['color'] ?? '#3498db' }};">
         <span class="label">{{ $approval['name'] }}</span>
+        <!-- <br> -->
+        <!-- <span class="status">{{ $approval['authority'] }}</span> -->
         <br>
         <span class="status">{{ $approval['status'] }}</span>
       </li>

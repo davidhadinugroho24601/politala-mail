@@ -51,7 +51,21 @@ class ReceivedMailsResource extends Resource
     
     protected static ?string $navigationGroup = 'Inbox';
 
-   
+    protected function mount(int|string $record): void
+    {
+        parent::mount($record);
+    
+        $approval = ApprovalChain::where('mail_id', $record->id)
+            ->where('group_id', session('groupID'))
+            ->where('status', 'waiting')
+            ->where('authority', 'approve')
+            ->first();
+    
+        if ($approval) {
+            $approval->update(['status' => 'approved']);
+        }
+    }
+    
     
     public static function getNavigationItems(): array
     {
@@ -194,42 +208,46 @@ class ReceivedMailsResource extends Resource
                 
                 Tables\Actions\EditAction::make()
                 ->label(fn ($record) => 
-                    ApprovalChain::where('mail_id', $record->id)
+                    ($approval = ApprovalChain::where('mail_id', $record->id)
                         ->where('group_id', session('groupID'))
-                        ->value('status') === 'waiting' ? 'Edit' : 'View'
+                        ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                        ? 'Edit' 
+                        : 'View'
                 )
                 ->icon(fn ($record) => 
-                    ApprovalChain::where('mail_id', $record->id)
+                    ($approval = ApprovalChain::where('mail_id', $record->id)
                         ->where('group_id', session('groupID'))
-                        ->value('status') === 'waiting' ? 'heroicon-o-pencil' : 'heroicon-o-eye'
+                        ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                        ? 'heroicon-o-pencil' 
+                        : 'heroicon-o-eye'
                 )
                 ->modalHeading(fn ($record) => 
-                    ApprovalChain::where('mail_id', $record->id)
+                    ($approval = ApprovalChain::where('mail_id', $record->id)
                         ->where('group_id', session('groupID'))
-                        ->value('status') === 'waiting' ? 'Edit Record' : 'View Record'
+                        ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                        ? 'Edit Record' 
+                        : 'View Record'
                 )
                 ->form(fn ($record) => 
-                    ApprovalChain::where('mail_id', $record->id)
-                        ->where('group_id', session('groupID'))
-                        ->value('status') === 'waiting' 
-                        ? [/* Your editable form fields */] 
-                        : [] // No form fields for "View" mode
-                )
-                ->color('secondary')
-                ,
-                // Action::make('approveMail')
-                // ->label('Approve')
-                // ->requiresConfirmation()
-                // ->modalHeading('Approve Mail?')
-                // ->modalSubheading('Are you sure you want to approve this mail? This action cannot be undone.')
-                // ->modalButton('Yes, Approve')
-                // ->url(function ($record) {
-                //     // dd($record->id); // Dumps the record ID
-                //     return ReceivedMailsResource::getUrl('approveMail', ['record' => $record->id]);
-                // }),
+                ($approval = ApprovalChain::where('mail_id', $record->id)
+                    ->where('group_id', session('groupID'))
+                    ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                    ? [/* Your editable form fields */] 
+                    : [] // No form fields for "View" mode
+            )
+            ->color(function ($record) {
+                $approval = ApprovalChain::where('mail_id', $record->id)
+                    ->where('group_id', session('groupID'))
+                    ->first();
             
-                // ->requiresConfirmation()
-                // ->action(fn ($record) => redirect(ReceivedMailsResource::getUrl('approveMail', ['record' => $record->id]))),
+                return $approval && $approval->status === 'waiting' && $approval->authority === 'read' 
+                    ? 'primary' 
+                    : 'secondary';
+            })
+            
+            ,
+
+              
                 Action::make('approveMail')
                 ->label('Setujui')
                 ->icon('heroicon-o-check-circle')
@@ -238,14 +256,15 @@ class ReceivedMailsResource extends Resource
                     $mailService->approveMail($record);
                 })
                 ->color('success')
-                ->extraAttributes(fn ($record) => [
-                    'style' => ApprovalChain::where('mail_id', $record->id)
+                ->extraAttributes(fn ($record) => 
+                    ($approval = ApprovalChain::where('mail_id', $record->id)
                         ->where('group_id', session('groupID'))
-                        ->whereNot('status', 'waiting')
-                        ->exists() ? 'display: none;' : ''
-                ]),
-            
-            Action::make('declineWithNote')
+                        ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                        ? [] // Tampilkan tombol
+                        : ['style' => 'display: none;'] // Sembunyikan tombol jika tidak memenuhi syarat
+                ),
+
+                Action::make('declineWithNote')
                 ->label('Revisi')
                 ->icon('heroicon-o-arrow-path')
                 ->form([
@@ -258,14 +277,16 @@ class ReceivedMailsResource extends Resource
                 })
                 ->requiresConfirmation()
                 ->color('warning')
-                ->extraAttributes(fn ($record) => [
-                    'style' => ApprovalChain::where('mail_id', $record->id)
+                ->extraAttributes(fn ($record) => 
+                    ($approval = ApprovalChain::where('mail_id', $record->id)
                         ->where('group_id', session('groupID'))
-                        ->whereNot('status', 'waiting')
-                        ->exists()  ? 'display: none;' : ''
-                ]),
-                // || !$record->isAncestor()
-            Action::make('decline')
+                        ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                        ? [] // Tampilkan tombol
+                        : ['style' => 'display: none;'] // Sembunyikan tombol jika tidak memenuhi syarat
+                ),
+            
+            
+                Action::make('decline')
                 ->label('Tolak')
                 ->icon('heroicon-o-x-circle')
                 ->action(function ($record, MailService $mailService) {
@@ -273,12 +294,14 @@ class ReceivedMailsResource extends Resource
                 })
                 ->requiresConfirmation()
                 ->color('danger')
-                ->extraAttributes(fn ($record) => [
-                    'style' => ApprovalChain::where('mail_id', $record->id)
+                ->extraAttributes(fn ($record) => 
+                    ($approval = ApprovalChain::where('mail_id', $record->id)
                         ->where('group_id', session('groupID'))
-                        ->whereNot('status', 'waiting')
-                        ->exists()  ? 'display: none;' : ''
-                ]),
+                        ->first()) && $approval->status === 'waiting' && $approval->authority === 'approve' 
+                        ? [] // Tampilkan tombol
+                        : ['style' => 'display: none;'] // Sembunyikan tombol jika tidak memenuhi syarat
+                ),
+            
                 
             
 

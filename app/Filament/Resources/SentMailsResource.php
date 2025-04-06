@@ -106,65 +106,102 @@ class SentMailsResource extends BaseResource
             ->columnSpanFull()
             ,
                 ]),
-            Select::make('is_staged')
-                ->required()
-                ->live() // Makes it update the form instantly
-                ->label('Tipe Surat')
-                    ->options([
-                        'yes' => 'Berjenjang',
-                        'no' => 'Langsung',
-                    ])                
-                    ->disabled(fn ($record) => $record !== null),
+              
 
-            // Final Target ID - Dropdown populated with user names
-            Select::make('final_id')
-            ->label('Jabatan Penerima')
-            ->options(Group::pluck('name', 'id'))
-            ->searchable()
-            ->required()
-            ->live() // Makes it update the form instantly
-            ->disabled(fn ($record) => $record !== null),
-        
-            Select::make('direct_id')
-                ->label('Penerima')
-                ->options(fn (callable $get, callable $set) => 
-                    ($finalId = $get('final_id')) 
-                        ? \App\Models\User::whereHas('groupDetailsView', fn ($query) => $query->where('group_id', $finalId))
-                            ->pluck('name', 'id')
-                        : []
-                )
-                ->searchable()
-                ->required()
-                ->hidden(fn ($get) => !$get('final_id') || $get('is_staged') !== 'no') // Disable if no final_id or is_staged == 'yes',
-                ->disabled(fn ($record) => $record !== null),
+           
 
         
 
-                TextInput::make('subject')
-                ->required()
-                ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
+               
                                 
             
-
 
                 Forms\Components\Select::make('template_id')
                 ->label('Template')
                 ->options(function () {
-                    $groupId = session('groupID'); // Get the logged-in user's group ID from session
+                    $groupId = session('groupID'); // Get the logged-in user's group ID
                     $divisionId = \App\Models\Group::where('id', $groupId)->value('division_id'); // Get division ID
-            
-                    if (!$divisionId) {
-                        return []; // No division found, return empty options
-                    }
-            
-                    return MailTemplate::whereHas('templateAvailability', function ($query) use ($divisionId) {
-                        $query->where('division_id', $divisionId); // Filter by division
+                    return MailTemplate::whereHas('mailPath', function ($query) use ($groupId) {
+                        $query->where('sender_id', $groupId); // Filter by division
                     })->pluck('name', 'id');
                 })
                 ->searchable()
                 ->required()
                 ->live()
-                ->disabled(fn ($record) => $record !== null),
+                ->disabled(fn ($record) => $record !== null)
+                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                    if (!$state) return;
+                
+                    $template = MailTemplate::find($state);
+                    if (!$template) return;
+                
+                    $set('is_staged', $template->type === 'direct' ? 'no' : 'yes');
+                
+                    $groupID = session('groupID') ?? 0;
+                    $path = $template->mailPath?->where('sender_id', $groupID)?->first();
+                    
+                    $set('final_id', $path?->receiver_id);
+                })
+                ,
+               
+                TextInput::make('subject')
+                ->required()
+                ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
+            
+                Forms\Components\Select::make('is_staged')
+                ->label('Tipe Surat')
+                ->required()
+                ->options([
+                    'yes' => 'Berjenjang',
+                    'no' => 'Langsung',
+                ])
+                
+                ->disabled()
+                ->dehydrated()
+            , // Disable it so users can't manually change it
+                
+                Forms\Components\Select::make('final_id')
+                ->label('Jabatan Penerima')
+                ->options(fn () => Group::pluck('name', 'id'))
+                ->searchable()
+                ->required()
+                ->live()
+                ->disabled()
+                ->dehydrated()
+            ,
+            
+            
+                Select::make('direct_id')
+                    ->label('Penerima')
+                    ->options(fn (callable $get, callable $set) => 
+                        ($finalId = $get('final_id')) 
+                            ? \App\Models\User::whereHas('groupDetailsView', fn ($query) => $query->where('group_id', $finalId))
+                                ->pluck('name', 'id')
+                            : []
+                    )
+                    ->searchable()
+                    ->required()
+                    ->hidden(fn ($get) => !$get('final_id') || $get('is_staged') !== 'no') // Disable if no final_id or is_staged == 'yes',
+                    ->disabled(fn ($record) => $record !== null),
+                 
+                // Forms\Components\Select::make('template_id')
+                // ->label('Template')
+                // ->options(function () {
+                //     $groupId = session('groupID'); // Get the logged-in user's group ID from session
+                //     $divisionId = \App\Models\Group::where('id', $groupId)->value('division_id'); // Get division ID
+            
+                //     if (!$divisionId) {
+                //         return []; // No division found, return empty options
+                //     }
+            
+                //     return MailTemplate::whereHas('templateAvailability', function ($query) use ($divisionId) {
+                //         $query->where('division_id', $divisionId); // Filter by division
+                //     })->pluck('name', 'id');
+                // })
+                // ->searchable()
+                // ->required()
+                // ->live()
+                // ->disabled(fn ($record) => $record !== null),
             
 
                 Select::make('disposition_id') 

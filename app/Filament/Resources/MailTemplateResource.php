@@ -21,7 +21,6 @@ use Filament\Forms\Components\View;
 use Filament\Forms\Components\Select;
 // use App\Filament\Resources\MailTemplateResource\RelationManagers\TemplateAvailabilityRelationManager;
 use App\Filament\Resources\MailTemplateResource\RelationManagers\MailPathRelationManager;
-
 class MailTemplateResource extends AdminResource
 {
     protected static ?string $model = MailTemplate::class;
@@ -33,6 +32,8 @@ class MailTemplateResource extends AdminResource
     protected static ?string $modelLabel = 'Template';
 
     protected static ?string $pluralModelLabel = 'Template';
+
+   
     public static function form(Form $form): Form
     {
         return $form
@@ -46,7 +47,15 @@ class MailTemplateResource extends AdminResource
                 ->hidden(fn (string $context): bool => $context !== 'edit')
                 ->extraAttributes(['style' => 'width: 100%; height: 600px; border: none;']),
                 
-
+                Select::make('type')
+                ->required()
+                ->live() // Makes it update the form instantly
+                ->label('Tipe Surat')
+                    ->options([
+                        'staged' => 'Berjenjang',
+                        'direct' => 'Langsung',
+                    ])                
+                    ->disabled(fn ($record) => $record !== null),
                 
                 // RichEditor::make('template')
                 // ->label('Mail Content')
@@ -107,15 +116,13 @@ class MailTemplateResource extends AdminResource
                 ]),
             ]);
     }
-
+   
     public static function getRelations(): array
     {
         return [
-            // TemplateAvailabilityRelationManager::class,
             MailPathRelationManager::class,
         ];
     }
-
     public static function getPages(): array
     {
         return [

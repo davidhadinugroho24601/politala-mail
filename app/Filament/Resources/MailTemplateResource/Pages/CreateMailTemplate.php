@@ -17,7 +17,7 @@ class CreateMailTemplate extends CreateRecord
     {
         
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
+        $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
         $client->addScope(Google_Service_Docs::DOCUMENTS);
         $client->addScope(Google_Service_Drive::DRIVE_FILE);
         $client->addScope(Google_Service_Drive::DRIVE);

@@ -11,7 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::table('approval_chain', function (Blueprint $table) {
+
+        $table->unsignedBigInteger('path_detail_id')->nullable();
+
+        $table->foreign('path_detail_id')
+            ->references('id')
+            ->on('path_details')
+            ->onDelete('set null'); 
+
+        });
     }
 
     /**

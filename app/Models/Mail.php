@@ -84,10 +84,12 @@ class Mail extends Model implements HasMedia
             ->get()
             ->map(function ($approval) {
                 return [
-                    'status' => $this->getStatusName($approval->status),
+                    'status' => $this->getStatusName($approval->status, $approval->authority),
                     'name' => Group::where('id',$approval->group_id)->value('name'),
                     // 'mail_id' => $approval->mail_id,
                     // 'id' => $approval->status,
+                    'authority' => $this->getAuthorityName($approval->authority),
+
                     'color' => $this->getStatusColor($approval->status),
                 ];
             })->toArray();
@@ -109,18 +111,39 @@ class Mail extends Model implements HasMedia
         
     }
 
-    private function getStatusName($status)
+    private function getStatusName($status, $authority)
     {
         return match ($status) {
-            'waiting' => 'Menunggu',
-            'approved' => 'Disetujui',
+            'waiting' => match ($authority) {
+                'skip' => 'Menunggu (Dilewati)',
+                'read' => 'Belum Dibaca',
+                'approve' => 'Menunggu Persetujuan',
+                default => 'Menunggu',
+            },
+            'approved' => match ($authority) {
+                'skip' => 'Dilewati',
+                'read' => 'Diketahui',
+                'approve' => 'Disetujui',
+                default => 'Disetujui',
+            },
             'finished' => 'Selesai',
             'trashed' => 'Ditolak',
             'denied' => 'Revisi',
-            default => 'Menunggu', // Default grey for unknown statuses
+            default => 'Menunggu',
         };
     }
+    
 
+    private function getAuthorityName($authority)
+    {
+        return match ($authority) {
+            'skip' => 'Lewati',
+            'read' => 'Mengetahui',
+            'approve' => 'Menyetujui',
+
+            default => 'Kosong', // Default grey for unknown statuses
+        };
+    }
     public function approvalChains()
     {
         return $this->hasMany(ApprovalChain::class, 'mail_id');
@@ -140,7 +163,7 @@ class Mail extends Model implements HasMedia
             ];
         })->toArray();
     }
- 
+  
     public function template()
     {
         return $this->belongsTo(MailTemplate::class);

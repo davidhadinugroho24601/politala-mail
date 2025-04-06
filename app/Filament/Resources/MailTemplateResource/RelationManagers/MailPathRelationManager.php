@@ -11,21 +11,21 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Select;
 use App\Models\PathDetail;
+use App\Models\MailPath;
+use App\Services\PathService;
+use App\Filament\Resources\MailPathResource;
+// use Filament\Resources\Pages\CreateRecord;
+use Filament\Tables\Actions\Action;
+use Illuminate\Database\Eloquent\Model;
 
-class MailPathRelationManager extends RelationManager
+class MailPathRelationManager extends RelationManager 
 {
     protected static string $relationship = 'MailPath';
-    protected function mutateFormDataBeforeSave(array $data): array
+    public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
-        dd($data);
-                // Insert a new PathDetail record
-        PathDetail::create([
-        'path_id' => $data['id'], // Adjust fields accordingly
-        // 'step' => 1, // Example value
-        ]);
-        // $data['created_by'] = auth()->id(); // Set the creator of the record
-        return $data;
+        return $ownerRecord->type === 'staged';
     }
+
     public function form(Form $form): Form
     {
         return $form
@@ -55,20 +55,38 @@ class MailPathRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
-                ->mutateFormDataUsing(function (array $data): array {
+                ->mutateFormDataUsing(function (array $data, PathService $pathService): array {
+                   
+                    $pathService->findShortestPath($data['sender_id'],$data['receiver_id']);
+                    
                     // Ubah data sebelum disimpan jika diperlukan
                     return $data;
                 })
-                ->after(function (MailPath $record) { // Pastikan tipe modelnya sesuai
-                    PathDetail::create([
-                        'path_id' => $record->id, // Gunakan ID dari record yang baru dibuat
-                        // 'step' => 1, // Contoh nilai default
-                    ]);
+                ->after(function (MailPath $record, PathService $pathService) { // Pastikan tipe modelnya sesuai
+                    // PathDetail::create([
+                    //     'path_id' => $record->id, // Gunakan ID dari record yang baru dibuat
+                    //     'group_id' => $record->sender_id, // Gunakan ID dari record yang baru dibuat
+                    //     'order' => 1,
+                    //     // 'step' => 1, // Contoh nilai default
+                    // ]);
+                    // dd($record);
+
+                    $pathDetail = [
+                        'sender_id' => $record->sender_id,
+                        'receiver_id' => $record->receiver_id,
+                        'template_id' => $record->template_id,
+                        'path_id' => $record->id,
+                    ];
+                    $pathService->createPathDetail($pathDetail);
                     return $record;
                 }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Action::make('edit_mail_path')
+                ->label('Edit Mail Path')
+                ->icon('heroicon-o-pencil')
+                ->url(fn ($record) => MailPathResource::getUrl('edit', ['record' => $record->id])),
+
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

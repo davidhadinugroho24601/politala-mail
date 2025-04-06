@@ -7,6 +7,8 @@ use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use App\Models\ApprovalChain;
 use App\Models\Group;
+use App\Models\PathDetail;
+use App\Models\MailPath;
 use App\Models\MailTemplate;
 use Illuminate\Validation\ValidationException;
 use Filament\Notifications\Notification;
@@ -26,7 +28,7 @@ class CreateSentMails extends CreateRecord
     public static function copyOrGenerateGoogleDoc(?string $sourceDocId = null): string
 {
     $client = new Google_Client();
-    $client->setAuthConfig(storage_path('directed-will-448301-i3-d1dc6de8a986.json'));
+    $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
     $client->addScope(Google_Service_Docs::DOCUMENTS);
     $client->addScope(Google_Service_Drive::DRIVE);
 
@@ -143,6 +145,7 @@ class CreateSentMails extends CreateRecord
      */
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
     {
+
         $this->validateTargetConnection(session('groupID'), $data['final_id'], $data['is_staged']);
         $data['writer_id'] = auth()->id();
         $data['status'] = 'Draft';
@@ -150,57 +153,109 @@ class CreateSentMails extends CreateRecord
         $data['google_doc_link'] = Self::copyOrGenerateGoogleDoc(
             $this->extractGoogleDocId(MailTemplate::find($data['template_id'])?->google_doc_link ?? '')
         );
-       
+      
 
         $record = $this->getModel()::create($data);
        
         
         $currentGroupId = $record->group_id;
+        $path = $record->template?->mailPath->where('sender_id', $currentGroupId);
+
+        $data['final_id'] = $path->value('receiver_id');
+        $pathId = $path->value('id');
+
+        // dd(PathDetail::where('path_id', $pathId)->pluck('id'));
+        $pathDetails = PathDetail::where('path_id', $pathId)
+        ->where('authority', '!=', 'skip')
+        ->pluck('id')
+        ->toArray();
+
+        $pathGroups = PathDetail::where('path_id', $pathId)
+        ->where('authority', '!=', 'skip')
+        ->pluck('group_id')
+        ->toArray();
+        // dd($pathDetails);
+        $this->createApprovalChain($record->id, $pathDetails);
+
+        if (!empty($pathGroups)) {
+                    // Update the record with the first target_id in the path
+                    $record->update(['target_id' => $pathGroups[0]]);
+        }
+
         // $status = 'down';
 
-        
+        // $pathIDs = 
         // $childIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
 
         // if (in_array($record->final_id, $parentIDs)) {
         //     $status = 'up';
         // }
 
-        if ($record->is_staged === 'yes') {
-            $pathIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
-            $this->createApprovalChain($record->id, $pathIDs);
-            if (!empty($pathIDs)) {
-                // Update the record with the first target_id in the path
-                $record->update(['target_id' => $pathIDs[0]]);
-            }
-        }
-        else{
-            $pathIDs[] = $data['final_id'];
 
-            $this->createApprovalChain($record->id, $pathIDs);
-            if (!empty($pathIDs)) {
-                // Update the record with the first target_id in the path
-                $record->update(['target_id' => $pathIDs[0]]);
-            }
-        }
+
+
+
+        // if ($record->is_staged === 'yes') {
+        //     $pathIDs = $this->findShortestPath($currentGroupId, $data['final_id']);
+        //     $this->createApprovalChain($record->id, $pathIDs);
+        //     if (!empty($pathIDs)) {
+        //         // Update the record with the first target_id in the path
+        //         $record->update(['target_id' => $pathIDs[0]]);
+        //     }
+        // }
+        // else{
+        //     $pathIDs[] = $data['final_id'];
+
+        //     $this->createApprovalChain($record->id, $pathIDs);
+        //     if (!empty($pathIDs)) {
+        //         // Update the record with the first target_id in the path
+        //         $record->update(['target_id' => $pathIDs[0]]);
+        //     }
+        // }
+
+
+
+
         // dd($pathIDs);
         
 
         return $record;
     }
 
-    /**
+    // /**
+    //  * Create approval chain entries.
+    //  */ 
+    // private function createApprovalChain($mailId, array $groupIds)
+    // {
+    //     $approvalChains = array_map(fn ($groupId) => [
+    //         'mail_id' => $mailId,
+    //         'group_id' => $groupId,
+    //     ], $groupIds);
+    //     if (!empty($approvalChains)) {
+    //         ApprovalChain::insert($approvalChains);
+    //     }
+    // }
+
+
+     /**
      * Create approval chain entries.
-     */
-    private function createApprovalChain($mailId, array $groupIds)
+     */ 
+    private function createApprovalChain($mailId, array $paths)
     {
-        $approvalChains = array_map(fn ($groupId) => [
+        $pathDetails = PathDetail::whereIn('id', $paths)->get();
+
+        $approvalChains = $pathDetails->map(fn ($path) => [
             'mail_id' => $mailId,
-            'group_id' => $groupId,
-        ], $groupIds);
+            'group_id' => $path->group_id,
+            'path_detail_id' => $path->id,
+            'authority' => $path->authority,
+        ])->toArray();
+            // dd($approvalChains);
         if (!empty($approvalChains)) {
             ApprovalChain::insert($approvalChains);
         }
     }
+
 
     /**
      * Validate if the final_id is connected to the sender.
