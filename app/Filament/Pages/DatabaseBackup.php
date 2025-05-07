@@ -92,5 +92,5 @@ class DatabaseBackup extends Page
         Storage::disk('public')->put($filename, $sqlDump);
 
         return Response::download(storage_path('app/public/' . $filename))->deleteFileAfterSend(true);
-    }
+    } 
 }

@@ -39,6 +39,8 @@ use Filament\Tables\Actions\BulkAction;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use ZipArchive;
+
+
 class ReceivedMailsResource extends Resource
 {
     protected static ?string $model = Mail::class;
@@ -180,7 +182,10 @@ class ReceivedMailsResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('assignedCode.code') -> label('Kode Surat'),
                 TextColumn::make('subject'),
+                TextColumn::make('writer.name') -> label('Pengirim'),
+                TextColumn::make('group.name') -> label('Jabatan Pengirim'),
                 // Tables\Columns\TextColumn::make('actions')
                 // ->label('Actions')
                 // ->formatStateUsing(fn ($record) => '
@@ -308,11 +313,40 @@ class ReceivedMailsResource extends Resource
             
             ])
             ->bulkActions([
-                // BulkAction::make('Download PDFs')
-                // ->action(fn ($records) => static::bulkDownloadPdfs($records))
-                // ->requiresConfirmation()
-                // ->icon('heroicon-m-arrow-down-tray'),
+                BulkAction::make('Download files')
+                    ->action(function ($records) {
+                        // Collect all the pdf paths, ignoring null values
+                        $pdfPaths = $records->pluck('pdf_path')->filter()->toArray();
+            
+                        if (empty($pdfPaths)) {
+                            // If no PDFs are selected, return early
+                            return;
+                        }
+            
+                        // Create a temporary zip file
+                        $zip = new ZipArchive;
+                        $zipFileName = 'documents_' . now()->timestamp . '.zip';
+                        $zipFilePath = storage_path('app/public/' . $zipFileName);
+            
+                        // Open the zip file for writing
+                        if ($zip->open($zipFilePath, ZipArchive::CREATE) === TRUE) {
+                            foreach ($pdfPaths as $pdfPath) {
+                                // Add each PDF file to the zip
+                                $fileName = basename($pdfPath); // Get the file name
+                                $zip->addFile($pdfPath, $fileName);
+                            }
+            
+                            // Close the zip file
+                            $zip->close();
+            
+                            // Return the zip file as a download
+                            return response()->download($zipFilePath)->deleteFileAfterSend(true);
+                        }
+                    })
+                    ->requiresConfirmation()
+                    ->icon('heroicon-m-arrow-down-tray'),
             ]);
+            
     }
    
     public static function getRelations(): array

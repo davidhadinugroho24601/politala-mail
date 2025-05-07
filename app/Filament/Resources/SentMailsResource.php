@@ -37,7 +37,7 @@ use Illuminate\Support\HtmlString;
 use App\Services\MailService;
 use Filament\Navigation\NavigationItem;
 
-
+use Filament\Forms\Get;
 
 class SentMailsResource extends BaseResource
 {
@@ -106,14 +106,7 @@ class SentMailsResource extends BaseResource
             ->columnSpanFull()
             ,
                 ]),
-              
-
-           
-
-        
-
-               
-                                
+                                   
             
 
                 Forms\Components\Select::make('template_id')
@@ -137,10 +130,6 @@ class SentMailsResource extends BaseResource
                 
                     $set('is_staged', $template->type === 'direct' ? 'no' : 'yes');
                 
-                    $groupID = session('groupID') ?? 0;
-                    $path = $template->mailPath?->where('sender_id', $groupID)?->first();
-                    
-                    $set('final_id', $path?->receiver_id);
                 })
                 ,
                
@@ -160,15 +149,32 @@ class SentMailsResource extends BaseResource
                 ->dehydrated()
             , // Disable it so users can't manually change it
                 
-                Forms\Components\Select::make('final_id')
-                ->label('Jabatan Penerima')
-                ->options(fn () => Group::pluck('name', 'id'))
-                ->searchable()
-                ->required()
-                ->live()
-                ->disabled()
-                ->dehydrated()
-            ,
+            Forms\Components\Select::make('final_id')
+    ->label('Jabatan Penerima')
+    ->options(function (Get $get) {
+        $templateId = $get('template_id'); // Ambil nilai dari field template_id
+        if (!$templateId) return [];
+
+        $groupID = session('groupID');
+        if (!$groupID) return [];
+
+        // Ambil group penerima dari MailPath
+        $receiverGroupIds = \App\Models\MailPath::where('template_id', $templateId)
+            ->where('sender_id', $groupID)
+            ->pluck('receiver_id');
+
+        if ($receiverGroupIds->isEmpty()) return [];
+
+        return \App\Models\Group::whereIn('id', $receiverGroupIds)
+            ->pluck('name', 'id')
+            ->toArray();
+    })
+    ->searchable()
+    ->required()
+    ->live() // penting agar berubah saat template_id berubah
+    ->dehydrated()
+    ->disabled(fn ($record) => $record !== null),
+
             
             
                 Select::make('direct_id')
@@ -184,24 +190,7 @@ class SentMailsResource extends BaseResource
                     ->hidden(fn ($get) => !$get('final_id') || $get('is_staged') !== 'no') // Disable if no final_id or is_staged == 'yes',
                     ->disabled(fn ($record) => $record !== null),
                  
-                // Forms\Components\Select::make('template_id')
-                // ->label('Template')
-                // ->options(function () {
-                //     $groupId = session('groupID'); // Get the logged-in user's group ID from session
-                //     $divisionId = \App\Models\Group::where('id', $groupId)->value('division_id'); // Get division ID
-            
-                //     if (!$divisionId) {
-                //         return []; // No division found, return empty options
-                //     }
-            
-                //     return MailTemplate::whereHas('templateAvailability', function ($query) use ($divisionId) {
-                //         $query->where('division_id', $divisionId); // Filter by division
-                //     })->pluck('name', 'id');
-                // })
-                // ->searchable()
-                // ->required()
-                // ->live()
-                // ->disabled(fn ($record) => $record !== null),
+               
             
 
                 Select::make('disposition_id') 
@@ -245,9 +234,15 @@ public static function table(Table $table): Table
    
         ->columns([
             Tables\Columns\TextColumn::make('finalTarget.name')
-            ->label('Receiver')
+            ->label('Penerima')
             ->sortable()
             ->searchable(),
+
+            Tables\Columns\TextColumn::make('assignedCode.code')
+            ->label('Kode Surat')
+            ->sortable()
+            ->searchable(),
+
             Tables\Columns\TextColumn::make('subject')->label('Subjek'),
             TextColumn::make('created_at')
             ->label('Terakhir Diubah')
@@ -262,24 +257,7 @@ public static function table(Table $table): Table
                     : '-'; // Show a dash if no timestamps are available
             }),
          
-            // ViewColumn::make('timeline')
-            // ->label('Timeline')
-            // ->view('filament.tables.columns.timeline-widget', [
-            //     'approvals' => ApprovalChain::orderBy('id')
-            //         ->get()
-            //         ->map(function ($approval) {
-            //             // Dynamically add a color based on the status
-            //             $approval->color = match ($approval->status) {
-            //                 'waiting' => '#f39c12', // Yellow for waiting
-            //                 'approved' => '#2ecc71', // Green for approved
-            //                 'finished' => '#2ecc71', // Green for finished
-            //                 'denied' => '#e74c3c', // Red for denied
-            //                 default => '#bdc3c7', // Grey for any other status
-            //             };
-            //             return $approval;
-            //         }),
-            // ])
-            // ->extraAttributes(['class' => 'max-w-xs overflow-hidden truncate', 'style' => 'text-align: left;'])
+         
 
 
         ])
@@ -323,15 +301,16 @@ public static function table(Table $table): Table
               
                 ->hidden(fn ($record) => empty($record->notes)),
                 
-            
+                Tables\Actions\DeleteAction::make()
+                ->visible(fn ($record) => $record->released === 'no'), // Only allow delete if not released
 
             
 
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+                // Tables\Actions\BulkActionGroup::make([
+                //     Tables\Actions\DeleteBulkAction::make(),
+                // ]),
             ]);
     }
 

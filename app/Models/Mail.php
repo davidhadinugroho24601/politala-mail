@@ -7,6 +7,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\HasMedia;
 use App\Models\Group;
 use App\Models\MailTemplate;
+use App\Models\CodeList;
+
 class Mail extends Model implements HasMedia
 {
     use InteractsWithMedia;
@@ -43,15 +45,32 @@ class Mail extends Model implements HasMedia
         'pdf_path',
         'direct_id',
         'hidden_code',
+        'released',
 
      ];
-
+ 
+     public function assignedCode()
+     {
+         return $this->hasOne(CodeList::class);
+     }
+ 
     public function recipient()
     {
         return $this->belongsTo(User::class, 'direct_id');
     }
 
-        public function finalTarget()
+    public function writer()
+    {
+        return $this->belongsTo(User::class, 'writer_id');
+    }
+
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'group_id');
+    }
+
+    public function finalTarget()
     {
         return $this->belongsTo(Group::class, 'final_id');
     }

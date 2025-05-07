@@ -47,8 +47,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
+ 
     public function groupDetailsView() {
         return $this->hasMany(GroupDetailsView::class);
+    }
+
+    public function groupDetails() {
+        return $this->hasMany(GroupDetail::class);
     }
 }

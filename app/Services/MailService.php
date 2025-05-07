@@ -25,7 +25,7 @@ use Illuminate\Http\Response;
 use setasign\Fpdi\Fpdi;
 use Illuminate\Support\Str;
 use setasign\Fpdi\PdfReader;
-
+use App\Models\CodeList;
 class MailService
 {
 
@@ -77,72 +77,58 @@ class MailService
         
     
 
-    function replacePlaceholdersInGoogleDoc($documentId, $record) {
-
-        // Initialize Google Client
+    
+    function initGoogleDocsService(): Google_Service_Docs {
         $client = new Google_Client();
         $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
         $client->addScope(Google_Service_Docs::DOCUMENTS);
+        return new Google_Service_Docs($client);
+    }
     
-        $service = new Google_Service_Docs($client);
-        
-        // Fetch document content
-        $document = $service->documents->get($documentId);
-    
-        // Ambil data grup beserta divisi
-        $group = Group::where('id', session('groupID'))
-            ->with('division')
-            ->first();
+    function generateMailPlaceholders($record): array {
 
+        $group = Group::where('id', session('groupID'))->with('division')->first();
         $divisionAcronym = $group?->division?->acronym ?? 'Akronim Divisi Tidak Diketahui';
         $divisionName = $group?->division?->name ?? 'Nama Divisi Tidak Diketahui';
         $divisionCode = $group?->division?->division_code ?? 'Kode Divisi Tidak Diketahui';
-            
-
-        $enabledMailCode = MailCode::where('status', 'enabled')->first()->value('code') ?? 'Replace Kode Surat Gagal';
         $releasedMail = Mail::where('status', 'Submitted')->count() + 1;
-        
         $writerGroupName = Group::where('id', session('groupID'))->value('name') ?? 'Jabatan Pengirim Tidak Diketahui';
         $recipientGroupName = Group::where('id', $record->final_id)->value('name') ?? 'Jabatan Penerima Tidak Diketahui';
-
         $dispositionName = $record?->disposition?->name ?? 'Disposisi Kosong';
-        // dd($dispositionName);
-
         $writer = Auth::user();
-        $recipient = $record?->recipient;
+        $peerIds = $writer->groupDetails->pluck('group.peer_id')->filter()->unique();
 
-        $writerName = $writer?->name ?? 'Pengirim Tidak Diketahui';
-        $recipientName = $recipient?->name ?? 'Penerima Tidak Diketahui';
-
-        $writerNIP = $writer?->NIP ?? 'NIP Pengirim Tidak Diketahui';
-        $recipientNIP = $recipient?->NIP ?? 'NIP Penerima Tidak Diketahui';
+        if (in_array(session('groupID'), $peerIds->toArray())) {
+            $writerDetail = $group->groupDetails->first(); // Ambil satu GroupDetail dulu
+            $writer = $writerDetail?->user;
+        }
         
-        $writerNIDN = $writer?->NIDN ?? 'NIDN Pengirim Tidak Diketahui';
-        $recipientNIDN = $recipient?->NIDN ?? 'NIDN Penerima Tidak Diketahui';
 
-        // dd($recipientGroup);
-        $placeholders = [
+
+        $recipient = $record?->recipient ?? optional($record?->finalTarget?->groupDetail?->first())->user;
+        return [
             '{disposisi}' => (string) $dispositionName,
-            '{kode surat}' => (string) $enabledMailCode,
             '{surat terbit}' => (string) $releasedMail,
-            '{nama pengirim}' => $writerName, // Get sender from session
-            '{nama penerima}' => $recipientName, // Get recipient from $this->record
+            '{nama pengirim}' => $writer?->name ?? 'Pengirim Tidak Diketahui',
+            '{nama penerima}' => $recipient?->name ?? 'Penerima Tidak Diketahui',
             '{jabatan pengirim}' => $writerGroupName,
             '{jabatan penerima}' => $recipientGroupName,
-            '{NIP Pengirim}' => $writerNIP,
-            '{NIP Penerima}' => $recipientNIP,
-            '{NIDN Pengirim}' => $writerNIDN,
-            '{NIDN Penerima}' => $recipientNIDN,
-            '{akronim divisi}' => (string) $divisionAcronym,
-            '{nama divisi}' => (string) $divisionName,
-            '{kode divisi}' => (string) $divisionCode,
+            '{NIP Pengirim}' => $writer?->NIP ?? 'NIP Pengirim Tidak Diketahui',
+            '{NIP Penerima}' => $recipient?->NIP ?? 'NIP Penerima Tidak Diketahui',
+            '{NIDN Pengirim}' => $writer?->NIDN ?? 'NIDN Pengirim Tidak Diketahui',
+            '{NIDN Penerima}' => $recipient?->NIDN ?? 'NIDN Penerima Tidak Diketahui',
+            '{akronim divisi}' => $divisionAcronym,
+            '{nama divisi}' => $divisionName,
+            '{kode divisi}' => $divisionCode,
             '{tanggal}' => date('d'),
             '{bulan}' => date('m'),
             '{tahun}' => date('Y'),
         ];
-        
-        
-        // Prepare batch requests to replace placeholders
+    }
+    
+    function replacePlaceholdersInGoogleDoc($documentId, $record) {
+        $service = $this->initGoogleDocsService();
+        $placeholders = $this->generateMailPlaceholders($record);
         $requests = [];
         foreach ($placeholders as $placeholder => $replacement) {
             $requests[] = new Google_Service_Docs_Request([
@@ -152,15 +138,42 @@ class MailService
                 ]),
             ]);
         }
-    
-        // Apply changes to Google Doc
         $service->documents->batchUpdate($documentId, new Google_Service_Docs_BatchUpdateDocumentRequest([
             'requests' => $requests,
         ]));
-    
         return "https://docs.google.com/document/d/{$documentId}/edit?embedded=true";
     }
     
+    function assignCode($documentId, $record) {
+        $service = $this->initGoogleDocsService();
+        $placeholders = $this->generateMailPlaceholders($record);
+        if (empty($record->assignedCode)) {
+            $enabledMailCode = MailCode::where('status', 'enabled')->value('code');
+            $parsedMailCode = strtr($enabledMailCode, $placeholders);
+            CodeList::create([
+                'code' => $parsedMailCode,
+                'mail_id' => $record->id,
+            ]);
+        }
+       else {
+        $parsedMailCode =$record->assignedCode->code;
+       }
+
+    //    dd($parsedMailCode);
+
+        $requests = [
+            new Google_Service_Docs_Request([
+                'replaceAllText' => new Google_Service_Docs_ReplaceAllTextRequest([
+                    'containsText' => ['text' => '{kode surat}', 'matchCase' => true],
+                    'replaceText' => $parsedMailCode ?? 'Replace Kode Surat Gagal',
+                ]),
+            ]),
+        ];
+        $service->documents->batchUpdate($documentId, new Google_Service_Docs_BatchUpdateDocumentRequest([
+            'requests' => $requests,
+        ]));
+        return "https://docs.google.com/document/d/{$documentId}/edit?embedded=true";
+    }
 
     public static function copyOrGenerateGoogleDoc(?string $sourceDocId = null): string
     {
@@ -399,14 +412,20 @@ class MailService
             ->send();
     }
 
-
+ 
     public function sendMail($record)
     {
         $docLink = $record->google_doc_link;
         $googleDocId = $this->extractGoogleDocId($docLink);
-        $updatedDocLink = $this->replacePlaceholdersInGoogleDoc($googleDocId, $record);
         
-        $record->update(['google_doc_link' => $updatedDocLink]);
+        $this->replacePlaceholdersInGoogleDoc($googleDocId, $record); // no need to return anything
+        $updatedDocLink = $this->assignCode($googleDocId, $record); // this one returns updated link
+        
+        $record->update([
+            'google_doc_link' => $updatedDocLink,
+            'released' => 'yes',
+        ]);
+        
 
         if (!empty($docLink)) {
             $pdfPath = $this->saveGoogleDocAsPdf($docLink, $record);

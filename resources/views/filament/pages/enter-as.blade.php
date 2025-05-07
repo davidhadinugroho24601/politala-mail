@@ -9,7 +9,7 @@
                 </a>
             </x-filament::card>
         @endforeach
-
+ 
         {{-- Only show the admin card if the logged-in user's role is "admin" --}}
         @if (auth()->check() && auth()->user()->role === 'admin')
             <x-filament::card>

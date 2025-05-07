@@ -61,6 +61,9 @@ class GroupResource extends AdminResource
                     ->label('Atasan')
                     ->options(Group::all()->pluck('name', 'id')),
 
+                    SelectColumn::make('peer_id')
+                    ->label('Alternatif')
+                    ->options(Group::all()->pluck('name', 'id')),
                        
             ])
             ->filters([

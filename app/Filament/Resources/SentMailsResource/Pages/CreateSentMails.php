@@ -159,10 +159,16 @@ class CreateSentMails extends CreateRecord
        
         
         $currentGroupId = $record->group_id;
-        $path = $record->template?->mailPath->where('sender_id', $currentGroupId);
-
+        $finalId = $record->final_id;
+        // dd($finalId);
+        $path = $record->template?->mailPath
+            ->where('sender_id', $currentGroupId)
+            ->where('receiver_id', $finalId)
+           ;
+        
         $data['final_id'] = $path->value('receiver_id');
         $pathId = $path->value('id');
+        // dd($pathId);
 
         // dd(PathDetail::where('path_id', $pathId)->pluck('id'));
         $pathDetails = PathDetail::where('path_id', $pathId)

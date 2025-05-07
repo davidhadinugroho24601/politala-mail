@@ -20,7 +20,7 @@ class MailPathResource extends Resource
     protected static ?string $model = MailPath::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static bool $shouldRegisterNavigation = true;
+    protected static bool $shouldRegisterNavigation = false;
     
    
     

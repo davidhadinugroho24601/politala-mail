@@ -22,18 +22,34 @@ class EnterAs extends Page
 
     public array $users = [];
     public array $groups = [];
+    public array $peers = [];
     public array $groupIds = [];
     // protected static bool $shouldRegisterNavigation = false;
-
+ 
     public function mount(): void
     {
-        $this->users = User::all()->toArray(); // Fetch all users and convert to array
+        $this->users = User::all()->toArray();
+    
         $this->groupIds = GroupDetailsView::where('user_id', Auth::id())
-            ->pluck('group_id') // Pluck just the group_id values
-            ->toArray(); // Convert to array
+            ->pluck('group_id')
+            ->toArray();
+    
+        // Get peer IDs of current groups
+        $peerIds = Group::whereIn('id', $this->groupIds)->pluck('peer_id')->filter()->toArray();
+    
+        // Merge peer IDs into group IDs, remove duplicates
+        $this->groupIds = array_unique(array_merge($this->groupIds, $peerIds));
+    
+        // Load all groups including peers
+        $this->groups = Group::whereIn('id', $this->groupIds)->get()->toArray();
+    
+        // Optional: load peer group models separately if needed
+        $this->peers = Group::whereIn('id', $peerIds)->get()->toArray();
+        // dd(Auth::user());
 
-            $this->groups = Group::whereIn('id', $this->groupIds)->get()->toArray(); // Convert collection to array
-        }
+    }
+    
+
 
        
 }

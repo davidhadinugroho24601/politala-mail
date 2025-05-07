@@ -5,7 +5,7 @@
                 style="position: absolute; top: 10px; right: 10px; background: #007bff; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 5px;">
             Fullscreen
         </button>
-    </div>
+    </div> 
 
     <script>
         function toggleFullScreen() {

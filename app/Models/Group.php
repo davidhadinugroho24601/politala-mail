@@ -18,13 +18,22 @@ class Group extends Model
     ];
 
     public function groupDetailsView()
-    {
+    { 
     return $this->hasMany(GroupDetailsView::class);
     }
 
     public function groupDetail()
-    {
+    { 
     return $this->hasMany(GroupDetail::class);
+    }
+
+    public function peer()
+    { 
+    return $this->belongsTo(Group::class, 'peer_id');
+    }
+
+    public function groupDetails() {
+        return $this->hasMany(GroupDetail::class);
     }
 
     public function children()

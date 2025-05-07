@@ -17,6 +17,9 @@ use Google\Service\Drive as Google_Service_Drive;
 use Google\Service\Drive\DriveFile as Google_Service_Drive_DriveFile;
 use Google\Service\Drive\Permission as Google_Service_Drive_Permission;
 use Illuminate\Support\Facades\Storage;
+use App\Services\MailService;
+
+
 class EditSentMails extends EditRecord
 {
     protected static string $resource = SentMailsResource::class;
@@ -74,7 +77,15 @@ class EditSentMails extends EditRecord
     //         $this->record->pdf_path = $pdfPath;
     //     }
     // }
+    // dd($this->record);
+    $docLink = $this->record->google_doc_link;
+
+    $mailService = app(\App\Services\MailService::class); // resolve instance via container
+    $googleDocId = $mailService->extractGoogleDocId($docLink);
     
+    $mailService->replacePlaceholdersInGoogleDoc($googleDocId, $this->record);
+    
+    // MailService::
     if (isset($data['content'])) {
         // dd('tes');
         // Load the HTML content into DOMDocument

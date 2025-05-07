@@ -15,4 +15,6 @@ class CodeList extends Model
     {
         return $this->belongsTo(Mail::class, 'mail_id');
     }
+
+  
 }
