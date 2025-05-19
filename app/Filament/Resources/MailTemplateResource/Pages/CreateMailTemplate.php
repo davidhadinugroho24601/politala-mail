@@ -15,9 +15,8 @@ class CreateMailTemplate extends CreateRecord
     protected static string $resource = MailTemplateResource::class;
     public static function generateGoogleDoc(): string
     {
-        
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
+        $client->setAuthConfig(storage_path(config('globals.jwt_token')));
         $client->addScope(Google_Service_Docs::DOCUMENTS);
         $client->addScope(Google_Service_Drive::DRIVE_FILE);
         $client->addScope(Google_Service_Drive::DRIVE);

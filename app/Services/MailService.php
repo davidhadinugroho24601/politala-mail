@@ -80,7 +80,7 @@ class MailService
     
     function initGoogleDocsService(): Google_Service_Docs {
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
+        $client->setAuthConfig(storage_path(config('globals.jwt_token')));
         $client->addScope(Google_Service_Docs::DOCUMENTS);
         return new Google_Service_Docs($client);
     }
@@ -178,7 +178,7 @@ class MailService
     public static function copyOrGenerateGoogleDoc(?string $sourceDocId = null): string
     {
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
+        $client->setAuthConfig(storage_path(config('globals.jwt_token')));
         $client->addScope(Google_Service_Docs::DOCUMENTS);
         $client->addScope(Google_Service_Drive::DRIVE);
     
@@ -228,7 +228,7 @@ class MailService
         }
     
         $client = new Google_Client();
-        $client->setAuthConfig(storage_path('directed-will-448301-i3-6820f245a961.json'));
+        $client->setAuthConfig(storage_path(config('globals.jwt_token')));
         $client->addScope(Google_Service_Drive::DRIVE);
     
         $driveService = new Google_Service_Drive($client);

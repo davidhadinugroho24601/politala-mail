@@ -57,41 +57,7 @@ class MailTemplateResource extends AdminResource
                     ])                
                     ->disabled(fn ($record) => $record !== null),
                 
-                // RichEditor::make('template')
-                // ->label('Mail Content')
-                // ->columnSpan('full')
-                // ->disabled(fn ($record) => $record && $record->status !== 'Draft')
-                // ->toolbarButtons([
-                //     'bold', 'italic', 'underline', 'strike',
-                //     'bulletList', 'orderedList', 'blockquote', 'codeBlock',
-                //     'alignLeft', 'alignCenter', 'alignRight', 'alignJustify',
-                //     'link', 'attachFiles'
-                // ])
-                // ->extraAttributes(['style' => 'word-wrap: break-word;'])
-                // ->afterStateUpdated(function ($state, $record) {
-                //     if (!$record) {
-                //         return;
-                //     }
-            
-                //     // Extract image URLs and store them in the media library
-                //     preg_match_all('/<img[^>]+src="([^">]+)"/', $state, $matches);
-            
-                //     foreach ($matches[1] as $url) {
-                //         // Store images in the media library
-                //         $record->addMediaFromUrl($url)
-                //             ->toMediaCollection('attachments');
-                //     }
-            
-                //     // Keep only <img> tags and remove everything else inside <figure>
-                //     $cleanContent = preg_replace('/<figure[^>]*>.*?(<img[^>]+>).*?<\/figure>/s', '$1', $state);
-            
-                //     // Remove any remaining <figcaption> just in case
-                //     $cleanContent = preg_replace('/<figcaption[^>]*>.*?<\/figcaption>/s', '', $cleanContent);
-            
-                //     // Update the content without captions
-                //     $record->update(['content' => $cleanContent]);
-                // }),
-            
+              
 
             
             ]);

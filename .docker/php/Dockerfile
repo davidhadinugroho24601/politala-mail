@@ -48,16 +48,16 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php
 RUN php -r "unlink('composer-setup.php');"
 RUN mv composer.phar /usr/local/bin/composer
+RUN docker-php-ext-install exif
 
 ENV COMPOSER_ALLOW_SUPERUSER 1
 ENV COMPOSER_HOME /composer
 ENV PATH $PATH:/composer/vendor/bin
 RUN composer config --global process-timeout 3600
 RUN composer global require "laravel/installer"
-
 WORKDIR /root
 RUN git clone https://github.com/seebi/dircolors-solarized
-
+RUN git config --global --add safe.directory /var/www
 EXPOSE 5173
 WORKDIR /var/www
 
