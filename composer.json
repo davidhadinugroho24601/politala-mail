@@ -12,7 +12,7 @@
         "laravel/framework": "^11.0",
         "laravel/socialite": "^5.20",
         "laravel/tinker": "^2.9",
-        "spatie/laravel-medialibrary": "^11.12"
+        "spatie/laravel-medialibrary": "^11.13"
     },
     "require-dev": {
         "driftingly/rector-laravel": "^1.0",

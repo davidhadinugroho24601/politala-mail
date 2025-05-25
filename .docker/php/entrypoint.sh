@@ -11,7 +11,15 @@ mkdir -p /sessions
 chmod 777 /sessions
 
 
-composer require filament/filament spatie/laravel-medialibrary google/apiclient
-# php-fpm
+# Check if Filament is already installed by looking for one of its classes
+if ! grep -q "Filament\\Facades\\Filament" composer.lock 2>/dev/null; then
+  echo "Filament and other dependencies not found. Installing..."
+  composer require filament/filament spatie/laravel-medialibrary google/apiclient
+else
+  echo "Required packages already installed. Skipping composer require."
+fi
+
+php artisan filament:assets
+
 
 exec "$@"

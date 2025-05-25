@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Models\Group;
 use App\Models\User;
+use App\Models\Division;
 use App\Models\Disposition;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\RichEditor;
@@ -103,22 +104,28 @@ class SentMailsResource extends BaseResource
                 ->schema([
                     View::make('filament.tables.columns.timeline-widget')
                         ->label(false) // Hides default label
-            ->columnSpanFull()
-            ,
-                ]),
+                    ->columnSpanFull()
+                        ,
+                        ]),
                                    
             
+              
 
                 Forms\Components\Select::make('template_id')
                 ->label('Template')
                 ->options(function () {
                     $groupId = session('groupID'); // Get the logged-in user's group ID
                     $divisionId = \App\Models\Group::where('id', $groupId)->value('division_id'); // Get division ID
+                    $mailTemplate =  MailTemplate::whereHas('mailPath', function ($query) use ($groupId) {
+                        $query->where('sender_id', $groupId); // Filter by division
+                    })->pluck('name', 'id');
+                    // dd($mailTemplate);
                     return MailTemplate::whereHas('mailPath', function ($query) use ($groupId) {
                         $query->where('sender_id', $groupId); // Filter by division
                     })->pluck('name', 'id');
                 })
-                ->searchable()
+                // ->searchable()
+                ->reactive()
                 ->required()
                 ->live()
                 ->disabled(fn ($record) => $record !== null)
@@ -150,30 +157,41 @@ class SentMailsResource extends BaseResource
             , // Disable it so users can't manually change it
                 
             Forms\Components\Select::make('final_id')
-    ->label('Jabatan Penerima')
-    ->options(function (Get $get) {
-        $templateId = $get('template_id'); // Ambil nilai dari field template_id
-        if (!$templateId) return [];
+            ->label('Jabatan Penerima')
+            ->options(function (Get $get) {
+                $templateId = $get('template_id');
+                if ($templateId) {
+                //   dd($templateId); 
+                 
 
-        $groupID = session('groupID');
-        if (!$groupID) return [];
+                
 
-        // Ambil group penerima dari MailPath
-        $receiverGroupIds = \App\Models\MailPath::where('template_id', $templateId)
-            ->where('sender_id', $groupID)
-            ->pluck('receiver_id');
+                $groupID = session('groupID');
 
-        if ($receiverGroupIds->isEmpty()) return [];
+                if (!$groupID) return [];
+                $receiverGroupIds = \App\Models\MailPath::where('template_id', $templateId)
+                    ->where('sender_id', $groupID)
+                    ->pluck('receiver_id');
+                if ($receiverGroupIds->isEmpty()) return [];
 
-        return \App\Models\Group::whereIn('id', $receiverGroupIds)
-            ->pluck('name', 'id')
-            ->toArray();
-    })
-    ->searchable()
-    ->required()
-    ->live() // penting agar berubah saat template_id berubah
-    ->dehydrated()
-    ->disabled(fn ($record) => $record !== null),
+                return \App\Models\Group::whereIn('id', $receiverGroupIds)
+                    ->pluck('name', 'id')
+                    ->toArray();
+                    
+                }
+
+
+                return [];
+                
+            })
+            ->live()
+            
+           ->native(false)
+            // ->searchable()
+            ->required()
+            ->live() // penting agar berubah saat template_id berubah
+            ->dehydrated()
+            ->disabled(fn ($record) => $record !== null),
 
             
             
