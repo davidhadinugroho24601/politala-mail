@@ -6,9 +6,13 @@ WORKDIR /app
 
 COPY . /app
 
-RUN apt update && apt install -y zip libzip-dev unzip zlib1g-dev && \
-    docker-php-ext-install zip && \
-    docker-php-ext-enable zip
+RUN apt-get update && apt-get install -y \
+    libicu-dev libzip-dev unzip zlib1g-dev libjpeg-dev libpng-dev libfreetype6-dev default-mysql-client \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl exif zip pdo pdo_mysql \
+    && docker-php-ext-enable intl exif zip pdo_mysql
+
+
 
 
 COPY --from=composer /usr/bin/composer /usr/bin/composer
