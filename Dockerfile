@@ -2,22 +2,26 @@ FROM dunglas/frankenphp:php8.3
 
 ENV SERVER_NAME=":80"
 
-WORKDIR /app
+WORKDIR /var/www
 
-COPY . /app
-
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libicu-dev libzip-dev unzip zlib1g-dev libjpeg-dev libpng-dev libfreetype6-dev default-mysql-client \
     && docker-php-ext-configure intl \
     && docker-php-ext-install intl exif zip pdo pdo_mysql \
     && docker-php-ext-enable intl exif zip pdo_mysql
 
-
-
-
+# Copy Composer binary
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-RUN composer install
+# Copy full Laravel source (including artisan)
+COPY . /var/www
+
+# Install dependencies AFTER all files are available
+RUN composer install --no-dev --optimize-autoloader
+
+
+
 
 
 # FROM dunglas/frankenphp

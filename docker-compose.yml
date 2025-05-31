@@ -1,41 +1,60 @@
-version: '3.8'
+# version: '3.8'
 
 services:
 
     ####################################################################################################
     # PHP
     # ####################################################################################################
-    php:
-        container_name: laravel_franken
-        image: image_laravel_franken
-        build: .
-        ports:
-        - 82:80
-        env_file:
-        - .env
-  
     # php:
-    #     build: .docker/php
-    #     # ports:
-    #     #     - 5173:5173
-    #     volumes:
-    #         - .:/var/www:cached
+    #     container_name: laravel_franken
+    #     image: image_laravel_franken
+    #     build: .
+    #     expose:
+    #     - "9000" # hanya expose ke internal Docker network, tidak ke host
     #     env_file:
-    #         - .env
-    # ####################################################################################################
-    # # Nginx
-    # ####################################################################################################
+    #     - .env
+    #     volumes:
+    #     - .:/app:cached
+    php:
+        build: .
+        image: image_laravel_franken
+        container_name: php
+        ports:
+        - "80:80"     # HTTP
+        - "443:443"   # HTTPS (optional, for automatic TLS)
+        volumes:
+        - .:/var/www
+        # - ./Caddyfile:/etc/caddy/Caddyfile
+        - ./Caddyfile:/etc/frankenphp/Caddyfile
+        environment:
+        - XDG_CONFIG_HOME=/etc/caddy
+        restart: unless-stopped
+
     # nginx:
     #     image: nginx
     #     ports:
-    #         - 82:80
+    #         - 80:80
     #     volumes:
     #         - .:/var/www
     #         - .docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
     #         - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
     #     depends_on:
     #         - php
-    #         - npm
+
+    # nginx:
+    #     image: nginx
+    #     container_name: nginx_laravel
+    #     ports:
+    #     - 80:80
+    #     - 443:443
+    #     volumes:
+    #     - .:/app
+    #     - .docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    #     - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+    #     - /etc/letsencrypt:/etc/letsencrypt:ro
+    #     depends_on:
+    #     - php
+
 
 
     # frankenphp:
@@ -71,7 +90,7 @@ services:
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         ports:
-            - 8080:80
+            - 8081:80
         links:
             - db
         environment:
@@ -116,9 +135,9 @@ services:
     ####################################################################################################
     npm:
         image: node:18
-        working_dir: /var/www
+        working_dir: /app
         volumes:
-            - .:/var/www
+            - .:/app
         ports:
             - 5173:5173
         command: ["sh", "-c", "npm install && npm run dev"]
