@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\GroupDetailsView;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
@@ -25,6 +27,12 @@ class User extends Authenticatable
         'category_id',
     ];
 
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // return str_ends_with($this->email, '@gmail.com') && $this->hasVerifiedEmail();
+        return str_ends_with($this->email, '@gmail.com');
+
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

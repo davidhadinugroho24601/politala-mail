@@ -17,9 +17,15 @@ class MailCodeDetail extends Model
 
     ];
 
-    public function codeDetails()
-    {
-     // Corrected the relationship definition
-     return $this->hasOne(MailCodeDetail::class, 'id', 'code_id');
-    }
+    // public function codeDetails()
+    // {
+    //  // Corrected the relationship definition
+    //  return $this->hasOne(MailCodeDetail::class, 'id', 'code_id');
+    // }
+
+    public function mailCode()
+{
+    return $this->belongsTo(MailCode::class, 'code_id');
+}
+
 }

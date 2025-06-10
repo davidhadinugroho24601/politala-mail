@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login</title>
-    @vite(['resources/css/app.css'])
+    <!-- @vite(['resources/css/app.css']) -->
+     <link rel="stylesheet" href="{{ asset('build/assets/app-C1-zc4C2.css') }}">
+    <script type="module" src="{{ asset('build/assets/app-Bf4POITK.js') }}"></script>
+
 </head>
 <body class="w-full min-h-screen flex items-center justify-center bg-gray-100 text-gray-900 dark:bg-[#09090B] dark:text-gray-200">
     

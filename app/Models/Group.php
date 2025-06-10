@@ -19,7 +19,7 @@ class Group extends Model
 
     public function groupDetailsView()
     { 
-    return $this->hasMany(GroupDetailsView::class);
+    return $this->hasMany(GroupDetail::class);
     }
 
     public function groupDetail()

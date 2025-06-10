@@ -5,7 +5,8 @@ namespace App\Filament\Pages;
 use Filament\Pages\Page;
 use App\Models\User;
 use App\Models\Group;
-use App\Models\GroupDetailsView;
+use App\Models\GroupDetail;
+
 use Filament\Widgets\Card;
 use Filament\Forms\Components\Card as FormCard;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +31,7 @@ class EnterAs extends Page
     {
         $this->users = User::all()->toArray();
     
-        $this->groupIds = GroupDetailsView::where('user_id', Auth::id())
+        $this->groupIds = GroupDetail::where('user_id', Auth::id())
             ->pluck('group_id')
             ->toArray();
     
