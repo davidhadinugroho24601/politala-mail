@@ -3,7 +3,7 @@ FROM dunglas/frankenphp:php8.3
 ENV SERVER_NAME=":80"
 
 WORKDIR /app
-# tes lagi
+# tes lagi   eeeee
 COPY . /app
 
 RUN apt update && apt install -y zip libzip-dev unzip zlib1g-dev && \
