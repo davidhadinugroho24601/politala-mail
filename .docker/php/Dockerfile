@@ -5,7 +5,7 @@ ENV SERVER_NAME=":80"
 WORKDIR /app
 
 COPY . /app
-tes
+
 RUN apt update && apt install -y zip libzip-dev unzip zlib1g-dev && \
     docker-php-ext-install zip && \
     docker-php-ext-enable zip
