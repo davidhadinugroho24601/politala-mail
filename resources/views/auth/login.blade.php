@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login</title>
-<!-- <link rel="stylesheet" href="{{ asset('build/assets/' . config('globals.css_build')) }}">
-<script src="{{ asset('build/assets/' . config('globals.js_build')) }}"></script> -->
-<link rel="stylesheet" href="{{ asset('build/assets/app-BoBG6eDY.css')}}">
-<script src="{{ asset('build/assets/app-Bf4POITK.js') }}"></script>
+<link rel="stylesheet" href="{{ asset('build/assets/' . config('globals.css_build')) }}">
+<script src="{{ asset('build/assets/' . config('globals.js_build')) }}"></script>
+<!-- <link rel="stylesheet" href="{{ asset('build/assets/app-BoBG6eDY.css')}}">
+<script src="{{ asset('build/assets/app-Bf4POITK.js') }}"></script> -->
 
 
 </head>
