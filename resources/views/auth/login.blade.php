@@ -8,7 +8,6 @@
 <script src="{{ asset('build/assets/' . config('globals.js_build')) }}"></script> -->
 <link rel="stylesheet" href="{{ asset('build/assets/app-BoBG6eDY.css')}}">
 <script src="{{ asset('build/assets/app-Bf4POITK.js') }}"></script>
-tryin
 
 </head>
 <body class="w-full min-h-screen flex items-center justify-center bg-gray-100 text-gray-900 dark:bg-[#09090B] dark:text-gray-200">
