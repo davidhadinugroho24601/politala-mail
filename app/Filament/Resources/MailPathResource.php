@@ -30,11 +30,13 @@ class MailPathResource extends Resource
             ->schema([
                 Select::make('sender_id')
                 ->relationship('sender', 'name')
+                ->disabled()
                 ->required()
                 ->label('Pengirim'),
             
                 Select::make('receiver_id')
                     ->relationship('receiver', 'name')
+                ->disabled()
                     ->required()
                     ->label('Penerima'),
             ]);

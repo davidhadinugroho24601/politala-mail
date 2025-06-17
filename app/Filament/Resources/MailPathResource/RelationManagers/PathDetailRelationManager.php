@@ -49,7 +49,7 @@ class PathDetailRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
                 // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

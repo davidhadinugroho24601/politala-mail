@@ -22,40 +22,44 @@ services:
         environment:
         - XDG_CONFIG_HOME=/etc/frankenphp
         restart: unless-stopped
+        networks:
+        - default
+        - loopgoods_default
+        - database
 
      ####################################################################################################
     # DATABASE (MySQL)
     ####################################################################################################
-    db:
-        image: mysql:8.1
-        ports:
-            - 3307:3306
-        volumes:
-            - .docker/db/data:/var/lib/mysql
-            - .docker/logs:/var/log/mysql
-            - .docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
-            - .docker/db/sql:/docker-entrypoint-initdb.d
-        environment:
-            MYSQL_ROOT_PASSWORD: root
-            MYSQL_DATABASE: refactorian
-            MYSQL_USER: refactorian
-            MYSQL_PASSWORD: refactorian
+    # db:
+    #     image: mysql:8.1
+    #     ports:
+    #         - 3307:3306
+    #     volumes:
+    #         - .docker/db/data:/var/lib/mysql
+    #         - .docker/logs:/var/log/mysql
+    #         - .docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    #         - .docker/db/sql:/docker-entrypoint-initdb.d
+    #     environment:
+    #         MYSQL_ROOT_PASSWORD: root
+    #         MYSQL_DATABASE: refactorian
+    #         MYSQL_USER: refactorian
+    #         MYSQL_PASSWORD: refactorian
 
     ####################################################################################################
     # phpMyAdmin
     ####################################################################################################
-    phpmyadmin:
-        image: phpmyadmin/phpmyadmin
-        ports:
-            - 8081:80
-        links:
-            - db
-        environment:
-            PMA_HOST: db
-            PMA_PORT: 3306
-            PMA_ARBITRARY: 1
-        volumes:
-            - .docker/phpmyadmin/sessions:/sessions
+    # phpmyadmin:
+    #     image: phpmyadmin/phpmyadmin
+    #     ports:
+    #         - 8081:80
+    #     links:
+    #         - db
+    #     environment:
+    #         PMA_HOST: db
+    #         PMA_PORT: 3306
+    #         PMA_ARBITRARY: 1
+    #     volumes:
+    #         - .docker/phpmyadmin/sessions:/sessions
 
     ####################################################################################################
     # Adminer
@@ -151,3 +155,9 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+
+networks:
+  loopgoods_default:
+    external: true
+  database:
+    external: true

@@ -38,7 +38,7 @@ class MailTemplateResource extends AdminResource
     {
         return $form
             ->schema([
-                TextInput::make('name'),
+                TextInput::make('name')->required(),
 
                 View::make('components.template-google-docs-editor')
                 ->label('Google Docs Editor')
@@ -75,6 +75,7 @@ class MailTemplateResource extends AdminResource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

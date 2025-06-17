@@ -426,7 +426,6 @@ class MailService
             'released' => 'yes',
         ]);
         
-
         if (!empty($docLink)) {
             $pdfPath = $this->saveGoogleDocAsPdf($docLink, $record);
             // Save the path if the conversion was successful

@@ -33,9 +33,9 @@ class UserResource extends AdminResource
     {
         return $form
             ->schema([
-                TextInput::make('name'),
+                TextInput::make('name')->required(),
 
-                TextInput::make('email'),
+                TextInput::make('email')->required(),
 
                 // TextInput::make('password')->password(),
 

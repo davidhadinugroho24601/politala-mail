@@ -2,16 +2,36 @@
 	frankenphp
 }
 
+new.loopgoods.org {
+    reverse_proxy nginx:80
+}
+
 mail.loopgoods.org {
 	root * /var/www/public
 	encode zstd br gzip
 
-	# Prioritaskan file statis dulu
+	# Logging (opsional untuk debug)
+	log {
+		output stdout
+		level DEBUG
+	}
+
+	# Handle file statis tertentu lebih awal
 	@staticFiles path /build/* /favicon.ico /robots.txt
 	handle @staticFiles {
 		file_server
 	}
 
+	# ✅ Tambahkan ini agar /storage bisa diakses
+	@storage path /storage/*
+	handle @storage {
+		file_server
+	}
+
+	# PHP (FrankenPHP)
 	php_server
+
+	# Default: file server fallback
 	file_server
 }
+
