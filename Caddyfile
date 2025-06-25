@@ -3,8 +3,13 @@
 }
 
 new.loopgoods.org {
-    reverse_proxy nginx:80
+    reverse_proxy php:5173
 }
+
+nginx.loopgoods.org {
+    reverse_proxy nginx-mail:80
+}
+
 
 mail.loopgoods.org {
 	root * /var/www/public
