@@ -7,8 +7,13 @@ new.loopgoods.org {
 }
 
 nginx.loopgoods.org {
-    reverse_proxy nginx-mail:80
+    reverse_proxy https://nginx-mail:443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
 }
+
 
 
 mail.loopgoods.org {

@@ -42,7 +42,7 @@ class AttachmentMailRelationManager extends RelationManager
             //
         ])
         ->headerActions([
-            Tables\Actions\CreateAction::make(),
+            Tables\Actions\CreateAction::make()->label("Tambahkan Lampiran"),
         ])
         ->actions([
             Tables\Actions\EditAction::make(),

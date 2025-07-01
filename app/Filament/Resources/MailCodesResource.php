@@ -25,11 +25,11 @@ class MailCodesResource extends AdminResource
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    protected static ?string $navigationLabel = 'Kode surat';
+    protected static ?string $navigationLabel = 'Format Kode surat';
 
-    protected static ?string $modelLabel = 'Kode surat';
+    protected static ?string $modelLabel = 'Format Kode surat';
 
-    protected static ?string $pluralModelLabel = 'Kode surat';
+    protected static ?string $pluralModelLabel = 'Format Kode surat';
     public static function form(Form $form): Form
     {
         return $form

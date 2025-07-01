@@ -186,7 +186,7 @@ class Mail extends Model implements HasMedia
     public function template()
     {
         return $this->belongsTo(MailTemplate::class);
-    }
+    } 
 
     public function disposition()
     {

@@ -20,6 +20,7 @@ class MailTemplate extends Model implements HasMedia
         'type',
         'name',
         'google_doc_link',
+        'archive_classification',
     ];
 
     public function templateAvailability(){

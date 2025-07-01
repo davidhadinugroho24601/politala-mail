@@ -219,7 +219,11 @@ class CreateSentMails extends CreateRecord
         //     }
         // }
 
+    $docLink = $record->google_doc_link;
 
+    $mailService = app(\App\Services\MailService::class); // resolve instance via container
+    $googleDocId = $mailService->extractGoogleDocId($docLink);
+    $mailService->replacePlaceholdersInGoogleDoc($googleDocId, $record);
 
 
         // dd($pathIDs);

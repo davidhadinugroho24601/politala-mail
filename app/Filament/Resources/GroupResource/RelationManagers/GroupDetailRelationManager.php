@@ -36,7 +36,7 @@ class GroupDetailRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()->label("Tambahkan Pengguna"),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

@@ -19,6 +19,7 @@ use App\Filament\Resources\UserCategoriesResource\RelationManagers\UsersRelation
 
 class UserCategoriesResource extends AdminResource
 {
+
     protected static ?string $model = UserCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-bars-3';

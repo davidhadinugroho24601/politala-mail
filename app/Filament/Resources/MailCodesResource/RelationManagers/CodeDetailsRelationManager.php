@@ -31,6 +31,7 @@ class CodeDetailsRelationManager extends RelationManager
                     'date' => 'Tanggal',
                     'month' => 'Bulan',
                     'year' => 'Tahun',
+                    'archive_classification' => 'Klasifikasi Arsip',
                 ])
                 ->reactive() // Make the select field reactive
                 ->required(),
@@ -88,6 +89,9 @@ class CodeDetailsRelationManager extends RelationManager
                             break;
                         case 'division_code':
                             $data['text'] = '{kode divisi}';
+                            break;
+                        case 'archive_classification':
+                            $data['text'] = '{klasifikasi arsip}';
                             break;
                         default:
                             // Optional: handle cases where 'type' doesn't match any case

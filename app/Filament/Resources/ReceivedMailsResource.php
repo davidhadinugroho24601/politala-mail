@@ -75,7 +75,7 @@ class ReceivedMailsResource extends Resource
         $templates = Mail::with('template')->get()->pluck('template.name')->unique()->filter();
     
         $navigationItems = [];
-        $navigationGroup = 'Surat Masuk';
+        $navigationGroup = 'Inbox';
 
         // Default "All Mails" navigation
         $navigationItems[] = NavigationItem::make()

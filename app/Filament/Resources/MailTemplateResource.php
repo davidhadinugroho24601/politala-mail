@@ -39,6 +39,9 @@ class MailTemplateResource extends AdminResource
         return $form
             ->schema([
                 TextInput::make('name')->required(),
+                TextInput::make('archive_classification')->required()->label('Klasifikasi Arsip'),
+                TextInput::make('google_doc_link')->required()->label('Tautan Google Doc'),
+                
 
                 View::make('components.template-google-docs-editor')
                 ->label('Google Docs Editor')

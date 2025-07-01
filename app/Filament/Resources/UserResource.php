@@ -21,13 +21,19 @@ use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\SelectColumn;
 use Filament\Forms\Components\RichEditor;
 use Filament\Panel;
+
 use App\Http\Middleware\CheckGroupIDSession;
 class UserResource extends AdminResource
 {
     protected static ?string $model = User::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
- 
+    
+    protected static ?string $navigationLabel = 'Pengguna';
+
+    protected static ?string $modelLabel = 'Pengguna';
+
+    protected static ?string $pluralModelLabel = 'Pengguna';
    
     public static function form(Form $form): Form
     {
@@ -53,6 +59,21 @@ class UserResource extends AdminResource
                 ->searchable()
                 ->required()
                 ,
+
+               TextInput::make('password')
+                ->label('Password')
+                ->password() // ini yang mengubah jadi input type="password"
+                ->minLength(8)
+                ->same('password_confirmation')
+                ->required(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord)
+                ->dehydrated(fn ($state) => filled($state)),
+
+                TextInput::make('password_confirmation')
+                ->label('Konfirmasi Password')
+                ->password()
+                ->required(fn ($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord)
+                ->dehydrated(false), // supaya tidak ikut disimpan
+
                 // Select::make('group_id')
                 // ->label('Jabatan')
                 // ->options(

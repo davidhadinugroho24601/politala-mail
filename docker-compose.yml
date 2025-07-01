@@ -22,10 +22,11 @@ services:
         environment:
         - XDG_CONFIG_HOME=/etc/frankenphp
         - APP_URL=https://mail.loopgoods.org
+        - GOOGLE_REDIRECT_URI=https://mail.loopgoods.org/auth/google/callback
         restart: unless-stopped
         networks:
         - default
-        - loopgoods_default
+        # - loopgoods_default
         - database
 
 
@@ -34,33 +35,34 @@ services:
     # PHP
     ####################################################################################################
     ####################################################################################################
-    # php-nginx:
-    #     build: .docker/php
-    #     ports:
-    #         - 5174:5173
-    #     volumes:
-    #         - .:/var/www:cached
-    #     environment:
-    #         - APP_URL=https://mail.loopgoods.org
-    #     networks:
-    #         - database
-    #         - default
+    php-nginx:
+        build: .docker/php
+        ports:
+            - 5174:5173
+        volumes:
+            - .:/var/www:cached
+        environment:
+            - APP_URL=https://nginx.loopgoods.org
+            - GOOGLE_REDIRECT_URI=https://nginx.loopgoods.org/auth/google/callback
+        networks:
+            - database
+            - default
 
     ####################################################################################################
     # Nginx
     ####################################################################################################
-    # nginx-mail:
-    #     image: nginx
-    #     ports:
-    #         - 8002:80
-    #         - 445:443
-    #     volumes:
-    #         - .:/var/www
-    #         - .docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    #         - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
-    #         # - .docker/certs:/etc/nginx/certs
-    #     depends_on:
-    #         - php-nginx
+    nginx-mail:
+        image: nginx
+        ports:
+            - 8002:80
+            - 445:443
+        volumes:
+            - .:/var/www
+            - .docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+            - .docker/certs:/etc/nginx/certs
+        depends_on:
+            - php-nginx
 
 
     
@@ -69,7 +71,6 @@ volumes:
   caddy_config:
 
 networks:
-  loopgoods_default:
-    external: true
+
   database:
     external: true

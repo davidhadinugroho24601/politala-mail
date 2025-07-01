@@ -23,6 +23,12 @@ class CodeListResource extends AdminResource
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
+    protected static ?string $navigationLabel = 'Kode Surat';
+
+    protected static ?string $modelLabel = 'Kode Surat';
+    
+    protected static ?string $pluralModelLabel = 'Kode Surat';
+    
     public static function form(Form $form): Form
     {
         return $form
