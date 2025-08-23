@@ -21,6 +21,14 @@ use Illuminate\Database\Eloquent\Model;
 class MailPathRelationManager extends RelationManager 
 {
     protected static string $relationship = 'MailPath';
+ 
+    // protected static ?string $navigationLabel = 'Alur Surat';
+
+    protected static ?string $modelLabel = 'Alur Surat';
+
+    protected static ?string $pluralModelLabel = 'Alur Surat';
+
+
     public static function canViewForRecord(Model $ownerRecord, string $pageClass): bool
     {
         return $ownerRecord->type === 'staged';
@@ -47,8 +55,8 @@ class MailPathRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('sender.name')
             ->columns([
-                Tables\Columns\TextColumn::make('sender.name'),
-                Tables\Columns\TextColumn::make('receiver.name'),
+                Tables\Columns\TextColumn::make('sender.name')->label('Pengirim'),
+                Tables\Columns\TextColumn::make('receiver.name')->label('Penerima'),
             ])
             ->filters([
                 //
@@ -78,8 +86,10 @@ class MailPathRelationManager extends RelationManager
                         'path_id' => $record->id,
                     ];
                     $pathService->createPathDetail($pathDetail);
+                     
+   
                     return $record;
-                }),
+                })->label("Tambah alur surat"),
             ])
             ->actions([
                 Action::make('edit_mail_path')

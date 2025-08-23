@@ -10,7 +10,8 @@ use Smalot\PdfParser\Parser;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use App\Models\Mail;
-
+use setasign\Fpdi\Fpdi;
+use Illuminate\Support\Str;
 class VerifyPdf extends Page implements HasForms
 {
     use InteractsWithForms;
@@ -21,7 +22,8 @@ class VerifyPdf extends Page implements HasForms
 
     public ?array $data = [];
     public ?string $verificationResult = null;
-    public ?Mail $record = null; // Tambahkan record Mail yang cocok
+    public ?Mail $record = null; // Tambahkan record Mail yang cocok 
+
 
     public function mount(): void
     {
@@ -41,39 +43,42 @@ class VerifyPdf extends Page implements HasForms
         ])->statePath('data');
     }
 
-    public function verify(): void
-    {
-        $filePath = $this->form->getState()['pdf'] ?? null;
 
-        if (!$filePath) {
-            $this->verificationResult = "❌ No file uploaded.";
-            $this->record = null;
-            return;
-        }
 
-        $fullPath = Storage::disk('public')->path($filePath);
 
-        if (!file_exists($fullPath)) {
-            $this->verificationResult = "❌ File not found.";
-            $this->record = null;
-            return;
-        }
+public function verify(): void
+{
+    $filePath = $this->form->getState()['pdf'] ?? null;
 
-        $parser = new Parser();
-        $pdf = $parser->parseFile($fullPath);
-        $text = $pdf->getText();
-
-        $mails = Mail::whereNotNull('hidden_code')->get();
-
-        foreach ($mails as $mail) {
-            if (str_contains($text, $mail->hidden_code)) {
-                $this->verificationResult = "✅ Verifikasi berhasil! Dokumen dengan subjek \"{$mail->subject}\" ditemukan.";
-                $this->record = $mail; // Simpan record yang cocok
-                return;
-            }
-        }
-
-        $this->verificationResult = "❌ PDF does not contain any hidden message from records.";
+    if (!$filePath) {
+        $this->verificationResult = "❌ No file uploaded.";
         $this->record = null;
+        return;
     }
+
+    $fullPath = Storage::disk('public')->path($filePath);
+
+    if (!file_exists($fullPath)) {
+        $this->verificationResult = "❌ File not found.";
+        $this->record = null;
+        return;
+    }
+
+    // Recompute hash of uploaded file
+    $uploadedHash = hash_file('sha256', $fullPath);
+
+    // Find record with same hash
+    $mail = Mail::where('file_hash', $uploadedHash)->first();
+
+    if ($mail) {
+        $this->verificationResult = "✅ Verifikasi berhasil! Dokumen dengan subjek \"{$mail->subject}\" ditemukan.";
+        $this->record = $mail;
+        return;
+    }
+
+    $this->verificationResult = "❌ Dokumen tidak valid atau sudah dimodifikasi.";
+    $this->record = null;
+}
+
+
 }

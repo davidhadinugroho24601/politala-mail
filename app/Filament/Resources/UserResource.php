@@ -43,7 +43,14 @@ class UserResource extends AdminResource
 
                 TextInput::make('email')->required(),
 
-                // TextInput::make('password')->password(),
+    TextInput::make('phone')
+    ->label('Nomor HP')
+    ->tel()
+    ->maxLength(15)
+    ->rule('regex:/^62[0-9]{8,13}$/') // wajib diawali 62 dan diikuti 8–13 digit
+    ->helperText('Nomor harus diawali dengan 62 (contoh: 628123456789)'),
+
+
 
                 Select::make('role')
                 ->options([

@@ -25,6 +25,7 @@ class User extends Authenticatable implements FilamentUser
         'email',
         'password',
         'category_id',
+        'phone',
     ];
 
     public function canAccessPanel(Panel $panel): bool
@@ -58,6 +59,12 @@ class User extends Authenticatable implements FilamentUser
  
     public function groupDetailsView() {
         return $this->hasMany(GroupDetailsView::class);
+    }
+    
+    public function forwardedMails()
+    {
+        return $this->belongsToMany(Mail::class, 'forwarded_mails', 'user_id', 'mail_id')
+                    ->withTimestamps();
     }
 
     public function groupDetails() {

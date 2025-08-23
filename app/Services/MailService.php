@@ -95,10 +95,13 @@ class MailService
             $divisionCode = $group?->division?->division_code ?? 'Kode Divisi Tidak Diketahui';
 
             $releasedMail = Mail::where('status', 'Submitted')
-            ->whereHas('template', function ($query) {
-                $query->where('name', '!=', 'Disposisi');
-            })
-            ->count() + 1;
+                ->whereHas('template', function ($query) {
+                    $query->where('name', '!=', 'Disposisi');
+                })
+                ->count() + 1;
+
+            $releasedMail = str_pad($releasedMail, 3, '0', STR_PAD_LEFT);
+
 
             $writerGroupName = $group?->name ?? 'Jabatan Pengirim Tidak Diketahui';
             $recipientGroupName = Group::where('id', $record->final_id)->value('name') ?? 'Jabatan Penerima Tidak Diketahui';
@@ -254,54 +257,64 @@ class MailService
     }
 
 
-    function saveGoogleDocAsPdf($googleDocUrl, $record) {
-        $docId = $this->extractGoogleDocId($googleDocUrl);
-        if (!$docId) {
-            return 'Error: Invalid Google Doc URL';
-        }
-    
-        $client = new Google_Client();
-        $client->setAuthConfig(storage_path(config('globals.jwt_token')));
-        $client->addScope(Google_Service_Drive::DRIVE);
-    
-        $driveService = new Google_Service_Drive($client);
-    
-        try {
-            // Export Google Doc as PDF
-            $response = $driveService->files->export($docId, 'application/pdf', ['alt' => 'media']);
-    
-            // Generate unique filename
-            $fileName = 'google_docs/' . uniqid('document_', true) . '.pdf';
-            $filePath = storage_path('app/public/' . $fileName);
-    
-            // Save original PDF to storage
-            Storage::disk('public')->put($fileName, $response->getBody());
-    
-            // Generate a unique hidden message
-            $hiddenMessage = Str::uuid(); // Example: Hidden ID: a3b7c2d0-1234-5678-9abc-def012345678
-    
-            // Add hidden text using FPDF/FPDI
-            $pdf = new Fpdi();
-            $pdf->setSourceFile(storage_path('app/public/' . $fileName));
-            $tplId = $pdf->importPage(1);
+
+
+function saveGoogleDocAsPdf($googleDocUrl, $record) {
+    $docId = $this->extractGoogleDocId($googleDocUrl);
+    if (!$docId) {
+        return 'Error: Invalid Google Doc URL';
+    }
+
+    $client = new \Google_Client();
+    $client->setAuthConfig(storage_path(config('globals.jwt_token')));
+    $client->addScope(\Google_Service_Drive::DRIVE);
+
+    $driveService = new \Google_Service_Drive($client);
+
+    try {
+        // Export Google Doc as PDF
+        $response = $driveService->files->export($docId, 'application/pdf', ['alt' => 'media']);
+
+        // Generate unique filename
+        $fileName = 'google_docs/' . uniqid('document_', true) . '.pdf';
+        $filePath = storage_path('app/public/' . $fileName);
+
+        // Save PDF to storage
+        Storage::disk('public')->put($fileName, $response->getBody());
+
+        // Open PDF with FPDI (no visual modification)
+        $pdf = new Fpdi();
+        $pageCount = $pdf->setSourceFile($filePath);
+
+        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+            $tplId = $pdf->importPage($pageNo);
             $pdf->addPage();
             $pdf->useTemplate($tplId);
-    
-            // Set transparent text color
-            $pdf->SetTextColor(255, 255, 255); // White text (invisible)
-            $pdf->SetXY(10, 10);
-            $pdf->SetFont('Arial', '', 8);
-            $pdf->Write(0, $hiddenMessage);
-            $record->update(['hidden_code' => $hiddenMessage]);
-    
-            // Save the modified PDF
-            $pdf->Output(storage_path('app/public/' . $fileName), 'F');
-    
-            return 'storage/' . $fileName;
-        } catch (\Exception $e) {
-            return 'Error: ' . $e->getMessage();
         }
+
+        // ✅ Set metadata (optional)
+        $pdf->SetTitle('Google Doc Export');
+        $pdf->SetAuthor('Laravel App');
+        $pdf->SetSubject('Hash Validation');
+
+        // Save final PDF first
+        $pdf->Output($filePath, 'F');
+
+        // ✅ Now compute the hash AFTER saving
+        $fileHash = hash_file('sha256', $filePath);
+
+        // Update DB record with the correct hash
+        $record->update(['file_hash' => $fileHash]);
+
+        return 'storage/' . $fileName;
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
     }
+}
+
+
+
+
 
     // Extract Google Doc ID from URL
     function extractGoogleDocId($url) {
@@ -410,23 +423,25 @@ class MailService
                             'final_id' => session('groupID'),
                             'group_id' => session('groupID'),
                             'writer_id' => $record->writer_id,
-                            'status' => 'Submitted',
+                            'status' => 'Draft',
                         ]);
 
                     $newMail->update(['google_doc_link' => $this->copyOrGenerateGoogleDoc(
                     $this->extractGoogleDocId(MailTemplate::find($newMail['template_id'])?->google_doc_link ?? '')
                     )]);
-                    $newMail->update(['pdf_path' => $this->saveGoogleDocAsPdf($newMail['google_doc_link']), $newMail]);
+                    // $newMail->update(['pdf_path' => $this->saveGoogleDocAsPdf($newMail['google_doc_link']), $newMail]);
                     // dd();
                         // Create an ApprovalChain entry for the new mail
-                        ApprovalChain::create([
-                            'mail_id' => $newMail->id,
-                            'group_id' => session('groupID'),
-                            'status' => 'waiting',
-                        ]);
+                        // ApprovalChain::create([
+                        //     'mail_id' => $newMail->id,
+                        //     'group_id' => session('groupID'),
+                        //     'status' => 'waiting',
+                        // ]);
                     }
                 }
-        }
+        
+        
+            }
 
         // Notify all users in the group
         $groupUsers = User::whereIn('id', function ($query) use ($record) {
@@ -439,10 +454,51 @@ class MailService
             $user->notify(new ApprovalProcessed('Approved', $record));
         }
 
+// cari user berdasarkan writer_id di mail
+$writer = User::find($record->writer_id);
+
+// default nomor HP kalau nggak ada
+$phone = $writer?->phone ?? null;
+
+if ($phone) {
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.fonnte.com/send',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => array(
+            'target'  => $phone, // << diisi dari user.phone
+            'message' => "Hello {$writer->name},\n\n".
+                     "Your mail with subject \"{$record->subject}\" ".
+                     "has been {$record->status}.\n".
+                     "You can view it here: " . url('/admin/received-mails/' . $record->id . '/edit'),
+        ),
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: FtWixrC6FjYqSaH7cnk7' // nanti ganti pakai config()
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    if (curl_errno($curl)) {
+        $error_msg = curl_error($curl);
+    }
+    curl_close($curl);
+}
+
+
         Notification::make()
             ->title('Approval processed successfully!')
             ->success()
             ->send();
+
+
+
     }
 
  
@@ -491,5 +547,8 @@ class MailService
             ->title('Mail sent successfully!')
             ->success()
             ->send();
+
+
+           
     }
 }

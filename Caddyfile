@@ -16,7 +16,7 @@ nginx.loopgoods.org {
 
 
 
-mail.loopgoods.org {
+surat.politala.ac.id {
 	root * /var/www/public
 	encode zstd br gzip
 

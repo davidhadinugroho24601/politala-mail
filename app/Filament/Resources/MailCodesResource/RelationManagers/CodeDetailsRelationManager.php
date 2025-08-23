@@ -99,11 +99,86 @@ class CodeDetailsRelationManager extends RelationManager
                     }
                     
                     return $data;
-                }),
+                })
+                 ->after(function ($record) {
+    $parent = $this->getOwnerRecord();
+
+    $parent->applyCodeLogic();
+    $parent->save();
+
+    // 🔄 Redirect back to parent edit page to refresh
+    return redirect(
+        \App\Filament\Resources\MailCodesResource::getUrl('edit', [
+            'record' => $parent,
+        ])
+    );
+})->label('Tambah detail kode surat')
+
             ])
+            
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                ->mutateFormDataUsing(function (array $data): array {
+            switch ($data['type']) {
+                case 'increment':
+                    $data['text'] = '{surat terbit}';
+                    break;
+
+                case 'date':
+                    $data['text'] = '{tanggal}';
+                    break;
+
+                case 'month':
+                    $data['text'] = '{bulan}';
+                    break;
+
+                case 'year':
+                    $data['text'] = '{tahun}';
+                    break;
+
+                case 'division_acronym':
+                    $data['text'] = '{akronim divisi}';
+                    break;
+
+                case 'division_name':
+                    $data['text'] = '{nama divisi}';
+                    break;
+
+                case 'division_code':
+                    $data['text'] = '{kode divisi}';
+                    break;
+
+                case 'archive_classification':
+                    $data['text'] = '{klasifikasi arsip}';
+                    break;
+            }
+
+            return $data;
+        })
+                ->after(function ($record) {
+                    $parent = $this->getOwnerRecord();
+                    $parent->applyCodeLogic();
+                    $parent->save();
+                    // 🔄 Redirect back to parent edit page to refresh
+                return redirect(
+                    \App\Filament\Resources\MailCodesResource::getUrl('edit', [
+                        'record' => $parent,
+                    ])
+                );
+                }),
+
+                Tables\Actions\DeleteAction::make()
+                ->after(function ($record) {
+                    $parent = $this->getOwnerRecord();
+                    $parent->applyCodeLogic();
+                    $parent->save();
+                    // 🔄 Redirect back to parent edit page to refresh
+                return redirect(
+                    \App\Filament\Resources\MailCodesResource::getUrl('edit', [
+                        'record' => $parent,
+                    ])
+                );
+                }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

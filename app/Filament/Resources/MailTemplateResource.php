@@ -40,7 +40,11 @@ class MailTemplateResource extends AdminResource
             ->schema([
                 TextInput::make('name')->required(),
                 TextInput::make('archive_classification')->required()->label('Klasifikasi Arsip'),
-                TextInput::make('google_doc_link')->required()->label('Tautan Google Doc'),
+                TextInput::make('google_doc_link')
+                ->required()
+                ->label('Tautan Google Doc')
+                ->hiddenOn('create'),
+
                 
 
                 View::make('components.template-google-docs-editor')

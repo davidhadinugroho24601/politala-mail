@@ -26,4 +26,23 @@ class MailCode extends Model
      // Corrected the relationship definition
      return $this->hasMany(MailCodeDetail::class, 'code_id', 'id');
     }
+
+    // App\Models\MailCode.php
+public function applyCodeLogic(): void
+{
+    // 1. Ensure only one enabled
+    if ($this->status === 'enabled') {
+        static::where('id', '!=', $this->id)
+            ->update(['status' => 'disabled']);
+    }
+
+    // 2. Merge codeDetails
+    $mergedText = $this->codeDetails()
+        ->pluck('text')
+        ->map(fn($text) => trim(preg_replace('/\s+/', ' ', $text)))
+        ->implode('/');
+
+    $this->code = $mergedText;
+}
+
 }

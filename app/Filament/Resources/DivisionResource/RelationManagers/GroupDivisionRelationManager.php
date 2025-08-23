@@ -36,12 +36,12 @@ class GroupDivisionRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                // Tables\Actions\CreateAction::make(),
                 Tables\Actions\Action::make('attachGroup')
-                ->label('Attach Group')
+                ->label('Tambahkan Jabatan')
                 ->form([
                     Select::make('group_id')
-                        ->label('Group')
+                        ->label('Nama Jabatan')
                         // Optionally filter groups that are not attached to any division yet:
                         ->options(Group::pluck('name', 'id'))
                         ->searchable()

@@ -366,50 +366,65 @@ class ReceivedMailsResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        $groupId = session('groupID');
-        if (session('groupID') !== 'admin') {
-        // Return empty query if session does not have a group ID
+   public static function getEloquentQuery(): Builder
+{
+    $groupId = session('groupID');
+    $userId = auth()->id(); // or session('userID') if that's how you store user ID
+
+    if ($groupId !== 'admin') {
         if (!$groupId) {
             return parent::getEloquentQuery()->whereRaw('1 = 0');
         }
-    
+
         $query = parent::getEloquentQuery()->withoutGlobalScopes();
-    
-        // Get approved mail IDs for the current group
+
         $approvedMailIds = ApprovalChain::where('group_id', $groupId)
             ->where('status', 'Approved')
             ->pluck('mail_id')
             ->toArray();
-    
-        $query->where(function ($q) use ($groupId, $approvedMailIds) {
-            $q->where('target_id', $groupId)
-              ->where('status', 'Submitted');
-    
+
+        $query->where(function ($q) use ($groupId, $approvedMailIds, $userId) {
+            // Regular "targeted to group" logic
+            $q->where(function ($sub) use ($groupId) {
+                $sub->where('target_id', $groupId)
+                    ->where('status', 'Submitted');
+            });
+
+            // Allow approved mails
             if (!empty($approvedMailIds)) {
                 $q->orWhereIn('id', $approvedMailIds);
             }
+
+            // ✅ NEW BLOCK for forwarded users
+            $q->orWhere(function ($forwarded) use ($userId) {
+            $forwarded->whereHas('forwardedRecipients', function ($r) use ($userId) {
+                $r->where('users.id', $userId);
+            })->whereHas('approvalChains', function ($a) {
+                $a->where('status', 'Finished');
+            });
         });
-    
-        // Apply filtering by template name if a parameter exists
+
+        });
+
+        // Optional: filter by template
+        if ($templateName = request()->query('template')) {
+            $query->whereHas('template', function ($q) use ($templateName) {
+                $q->where('name', $templateName);
+            });
+        }
+    } else {
+        $query = parent::getEloquentQuery();
+
         if ($templateName = request()->query('template')) {
             $query->whereHas('template', function ($q) use ($templateName) {
                 $q->where('name', $templateName);
             });
         }
     }
-    else{
-        $query = parent::getEloquentQuery();
-         // Apply filtering by template name if a parameter exists
-         if ($templateName = request()->query('template')) {
-            $query->whereHas('template', function ($q) use ($templateName) {
-                $q->where('name', $templateName);
-            });
-        }
-    }
-        return $query;
-    }
+
+    return $query;
+}
+
     
     
 

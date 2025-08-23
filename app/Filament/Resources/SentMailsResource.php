@@ -26,6 +26,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Carbon;
 use Filament\Tables\Columns\ViewColumn;
@@ -106,10 +107,24 @@ class SentMailsResource extends BaseResource
                         ->label(false) // Hides default label
                     ->columnSpanFull()
                         ,
-                        ]),
-                                   
-            
-              
+                        ])
+                        ->hidden(fn (string $context): bool => $context !== 'edit'),
+
+            // Toggle::make('is_broadcast')
+            // ->label('Broadcast surat?')
+            // ->helperText('Jika aktif, surat akan dikirim ke semua pengguna dengan jabatan yang sama.')
+            // ->live()->columnSpanFull(),
+
+                         Forms\Components\Select::make('group_id')
+            ->label('Pengirim')
+            ->options(
+                Group::where('id', session('groupID'))->pluck('name', 'id') // Filter options by session groupID
+            )
+            ->searchable()
+            ->required()
+            ->disabled()
+            ->default(session('groupID'))
+            ->dehydrated()->columnSpanFull(),
 
                 Forms\Components\Select::make('template_id')
                 ->label('Template')
@@ -141,7 +156,7 @@ class SentMailsResource extends BaseResource
                 ,
                
                 TextInput::make('subject')
-                ->required()
+                ->required()->label('Perihal')
                 ->disabled(fn ($record) => $record && $record->status !== 'Draft'),
             
                 Forms\Components\Select::make('is_staged')
@@ -193,30 +208,40 @@ class SentMailsResource extends BaseResource
             ->dehydrated()
             ->disabled(fn ($record) => $record !== null),
 
-            
-            
-                Select::make('direct_id')
-                    ->label('Penerima')
-                    ->options(fn (callable $get, callable $set) => 
-                        ($finalId = $get('final_id')) 
-                            ? \App\Models\User::whereHas('groupDetailsView', fn ($query) => $query->where('group_id', $finalId))
-                                ->pluck('name', 'id')
-                            : []
-                    )
-                    ->searchable()
-                    ->required()
-                    ->hidden(fn ($get) => !$get('final_id') || $get('is_staged') !== 'no') // Disable if no final_id or is_staged == 'yes',
-                    ->disabled(fn ($record) => $record !== null),
-                 
-               
-            
-
-                Select::make('disposition_id') 
+            Select::make('disposition_id') 
                 ->label('Disposisi')
                 ->options(Disposition::pluck('name', 'id'))
                 ->searchable()
                 ->required()
                 ->hidden(fn ($get) => \App\Models\MailTemplate::where('id', $get('template_id'))->value('name') !== 'Disposisi'),
+
+             Select::make('forwardedRecipients')
+            ->label('Teruskan Kepada')
+            ->multiple()
+            ->relationship('forwardedRecipients', 'name') // assumes User has 'name'
+            ->preload()
+            ->searchable()
+            , 
+            
+            
+                // Select::make('direct_id')
+                //     ->label('Penerima')
+                //     ->options(fn (callable $get, callable $set) => 
+                //         ($finalId = $get('final_id')) 
+                //             ? \App\Models\User::whereHas('groupDetails', fn ($query) => $query->where('group_id', $finalId))
+                //                 ->pluck('name', 'id')
+                //             : []
+                //     )
+                //     ->searchable()
+                //     ->hidden(function (Get $get) {return $get('is_broadcast');}) // Disable if no final_id or is_staged == 'yes',
+                //     ->disabled(fn ($record) => $record !== null)
+                //     ->required()
+                //     ->reactive(),
+                 
+               
+            
+
+             
             
             
             
@@ -228,16 +253,7 @@ class SentMailsResource extends BaseResource
             ->hidden(fn (string $context): bool => $context !== 'edit')
             ->extraAttributes(['style' => 'width: 100%; height: 600px; border: none;']),
 
-            Forms\Components\Select::make('group_id')
-            ->label('Pengirim')
-            ->options(
-                Group::where('id', session('groupID'))->pluck('name', 'id') // Filter options by session groupID
-            )
-            ->searchable()
-            ->required()
-            ->disabled()
-            ->default(session('groupID'))
-            ->dehydrated(),
+            
 
                 ]);
 

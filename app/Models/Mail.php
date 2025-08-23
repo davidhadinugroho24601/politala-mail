@@ -46,6 +46,8 @@ class Mail extends Model implements HasMedia
         'direct_id',
         'hidden_code',
         'released',
+        'is_broadcast',
+        'file_hash',
 
      ];
  
@@ -192,4 +194,11 @@ class Mail extends Model implements HasMedia
     {
         return $this->belongsTo(Disposition::class);
     }
+
+    public function forwardedRecipients()
+    {
+        return $this->belongsToMany(User::class, 'forwarded_mails', 'mail_id', 'user_id')
+                    ->withTimestamps();
+    }
+
 }
